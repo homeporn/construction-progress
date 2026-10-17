@@ -160,3 +160,12 @@ SIGINT/SIGTERM/SIGHUP завершили сервер с кодом 0 и осв�
 Инструкция: [macos_first_run.md](macos_first_run.md).
 Приёмка: [macos_acceptance_checklist.md](macos_acceptance_checklist.md).
 Подробные результаты: [macos_preflight_results.md](macos_preflight_results.md).
+
+
+## Уточнение для 3.1.1
+
+Пользователь сообщил, что 3.1 проверена на macOS Monterey в Safari. Архитектура Mac
+не уточнялась. Новый сквозной сценарий проверен в Linux/Chromium; это не испытание
+3.1.1 на Catalina, Monterey или Safari. Версии Python и зависимостей не изменены.
+Миграция 005 использует обычный SQLite ALTER TABLE ADD COLUMN и существующие триггеры;
+новых бинарных расширений, сетевых ресурсов и платформенных API нет.

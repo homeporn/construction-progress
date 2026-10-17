@@ -13,6 +13,9 @@ button,.button{display:inline-flex;align-items:center;justify-content:center;gap
 .workspace select { width: 100%; max-width: 100%; color: #172536; background: #fff; }
 .workspace a { font-size: .75rem; }
 .archive-form { margin-top: .7rem; }
+.work-tabs { flex-direction: row; gap: 10px; margin: 20px 0; flex-wrap: wrap; }
+.work-queue table { min-width: 1050px; }
+.pending-hint { color: var(--green); background: #f1f8f3; padding: 12px; margin: 0; }
 .sidebar { overflow-y: auto; }
 .workspace { margin-top: 20px; margin-bottom: 14px; padding-bottom: 14px; }
 .nav-link { padding-top: 9px; padding-bottom: 9px; }

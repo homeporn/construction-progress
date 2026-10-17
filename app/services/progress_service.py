@@ -2,6 +2,8 @@ from app.calculation_engine.aggregation import aggregate, group_by
 from app.calculation_engine.historical import HistoricalCalculator, read_snapshot
 from app.calculation_engine.models import GroupProgress, Status
 from app.models import Discipline
+from app.decimal_utils import subtract
+from app.repositories.event_repository import EventRepository
 from app.repositories.work_repository import WorkRepository
 
 
@@ -34,6 +36,34 @@ class ProgressService:
             return None
         calculate = self.calculator.preview_draft_as_of if preview else self.calculator.calculate_as_of
         return calculate(report_date, knowledge_cutoff, version_id)
+
+    def event_rows(self, report, *, filters=None, confirmation=False, pending_only=False):
+        """Derived work queues, never copies of work items or independent progress math."""
+        if report is None or not report.items:
+            return []
+        filters = filters or {}
+        with read_snapshot(self.db):
+            metadata = {row["id"]: dict(row) for row in self.work.list_work_items(
+                discipline=report.discipline.value if report.discipline else None, **filters)}
+            actual_ids = EventRepository(self.db, self.work.project_id).cumulative_quantities(
+                "fact", report.report_date, report.knowledge_cutoff,
+                discipline=report.discipline.value if report.discipline else None)
+            rows = []
+            for result in self.filtered_items(report, filters):
+                source = result.source
+                if not source.in_plan or source.work_item_id not in metadata:
+                    continue
+                if confirmation and source.work_item_id not in actual_ids:
+                    continue
+                pending = subtract(source.actual, source.confirmed)
+                if pending_only and pending <= 0:
+                    continue
+                row = metadata[source.work_item_id]
+                row.update(planned_quantity=source.planned_quantity, actual=source.actual,
+                           confirmed=source.confirmed, remaining=result.remaining_quantity,
+                           pending=pending, result=result)
+                rows.append(row)
+            return rows
 
     @staticmethod
     def filtered_items(report, filters):

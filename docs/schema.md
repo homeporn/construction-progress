@@ -1,6 +1,6 @@
-# SQLite: схема этапов 1–3.1
+# SQLite: схема этапов 1–3.1.1
 
-Источник истины — `migrations/001_initial.sql`, `002_replace_guards.sql`, `003_web_workflow.sql` и `004_projects.sql`.
+Источник истины — `migrations/001_initial.sql`, `002_replace_guards.sql`, `003_web_workflow.sql`, `004_projects.sql` и `005_event_sources.sql`.
 Схема не использует нативные расширения и пригодна для macOS/Windows.
 
 ```mermaid
@@ -28,8 +28,8 @@ erDiagram
 | `work_items` | id, building_id, floor_id, catalog_id, discipline | FK building/catalog; составной FK(floor_id,building_id); UNIQUE(building_id,floor_id,catalog_id,discipline) |
 | `plan_versions` | id, project_id, discipline, version_no, status, approved_at, created_at | FK project, UNIQUE(project_id,discipline,version_no), DRAFT/APPROVED, согласованность статуса и времени |
 | `plan_lines` | id, plan_version_id, work_item_id, planned_quantity, labor_norm, **unit** | FK version/item, UNIQUE(version,item), неотрицательные канонические Decimal TEXT, norm может быть NULL только до утверждения |
-| `fact_events` | id, work_item_id, quantity_delta, work_date, recorded_at, comment, correction_of_id, **event_key, unit** | FK item/self, UNIQUE event_key, ненулевая подписанная Decimal TEXT, неизменяемость |
-| `confirmation_events` | id, work_item_id, quantity_delta, confirmed_date, recorded_at, document_ref, correction_of_id, **event_key, unit, comment** | FK item/self, UNIQUE event_key, обязательный документ, неизменяемость |
+| `fact_events` | id, work_item_id, quantity_delta, work_date, recorded_at, comment, correction_of_id, **event_key, unit, source_type** | FK item/self, UNIQUE event_key, ненулевая подписанная Decimal TEXT, неизменяемость |
+| `confirmation_events` | id, work_item_id, quantity_delta, confirmed_date, recorded_at, document_ref, correction_of_id, **event_key, unit, comment, source_type** | FK item/self, UNIQUE event_key, обязательный документ, неизменяемость |
 | `audit_log` | id, entity_type, entity_id, operation, recorded_at, details | INSERT/UPDATE/DELETE, неизменяемость; details содержит OLD/NEW значения в SQL-литералах |
 | `schema_migrations` | name, applied_at | PK name, служебная история применения миграций |
 
@@ -104,3 +104,14 @@ erDiagram
 Повторный запуск пропускает 004 и не создаёт новый объект или повторные корпуса.
 Свежая установка получает прежние А/B/C один раз; новые объекты — только указанные
 пользователем корпуса. Физического удаления объектов в API нет: используется архив.
+
+## Источник событий, миграция 005
+
+Аддитивные `fact_events.source_type` и `confirmation_events.source_type` — непустой
+идентификатор из `[a-z0-9_]` длиной до 80. Старым строкам назначается `legacy`:
+их источник прежде не фиксировался. Новый ручной ввод получает `manual`, включая
+корректировки. Источник включён в аудит вставки. Сами события остаются append-only.
+Новых таблиц и обязательной ссылки на наряд нет. Формулы и колонки Decimal не меняются.
+Перед 005 существующая база копируется через Backup API в `backups/before-event-flow-*.sqlite3`.
+Улучшение очереди не требует дополнительных сохранённых итогов: списки производны
+от позиций, строк выбранного плана и обоих журналов с фильтрами дат/знаний/объекта.

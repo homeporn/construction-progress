@@ -21,7 +21,7 @@ def connect(path=DEFAULT_DB_PATH):
     return db
 
 
-def backup_database(db):
+def backup_database(db, label="projects"):
     """Consistent, checked pre-upgrade copy; never overwrite an earlier backup."""
     filename = db.execute("PRAGMA database_list").fetchone()[2]
     if not filename:  # An in-memory test database has no persistent original.
@@ -31,7 +31,7 @@ def backup_database(db):
     folder = Path(filename).parent / "backups"
     folder.mkdir(exist_ok=True)
     stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S")
-    path = folder / ("before-projects-{}-{}.sqlite3".format(stamp, uuid4().hex[:8]))
+    path = folder / ("before-{}-{}-{}.sqlite3".format(label, stamp, uuid4().hex[:8]))
     target = sqlite3.connect(str(path))
     try:
         db.backup(target)
@@ -68,6 +68,9 @@ def migrate(db):
     upgraded = markers and db.execute("SELECT 1 FROM schema_migrations WHERE name='004_projects.sql'").fetchone()
     if existing and not upgraded and (PROJECT_ROOT / "migrations/004_projects.sql").exists():
         backup_database(db)
+    elif existing and upgraded and (PROJECT_ROOT / "migrations/005_event_sources.sql").exists() and not db.execute(
+            "SELECT 1 FROM schema_migrations WHERE name='005_event_sources.sql'").fetchone():
+        backup_database(db, label="event-flow")
     db.execute("CREATE TABLE IF NOT EXISTS schema_migrations "
                "(name TEXT PRIMARY KEY, applied_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)")
     for path in sorted((PROJECT_ROOT / "migrations").glob("*.sql")):

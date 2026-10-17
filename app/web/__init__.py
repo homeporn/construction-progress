@@ -154,6 +154,10 @@ def create_app(config=None):
 
 
 def translate_error(message):
+    prefix = "confirmation exceeds actual: доступный остаток на дату подтверждения "
+    if message.startswith(prefix):
+        return ("Подтверждение превышает факт. Доступно на дату подтверждения: "
+                + message[len(prefix):].replace(".", ",") + ". Запись не сохранена.")
     translations = [
         ("confirmation exceeds actual", "Подтверждение превышает факт либо корректировка создаёт отрицательный накопительный объём. Запись не сохранена."),
         ("Approved plan", "Утверждённый план изменять нельзя. Создайте новый черновик на его основе."),

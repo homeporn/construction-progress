@@ -1,9 +1,10 @@
 from contextlib import contextmanager
 from decimal import Decimal
 
-from app.decimal_utils import exact_sum, subtract
+from app.decimal_utils import subtract
 from app.models import Discipline
 from app.time_utils import day, end_of_day, instant
+from app.repositories.event_repository import EventRepository
 from .aggregation import aggregate
 from .models import DateComparison, Issue, Snapshot, Status, WorkInput
 from .progress import calculate_item
@@ -81,15 +82,9 @@ class HistoricalCalculator:
                         tuple(results), total, total.issues)
 
     def _volumes(self, table, date_column, discipline, report_date, knowledge_cutoff):
-        rows = self.db.execute(
-            "SELECT e.work_item_id,e.quantity_delta FROM {} e JOIN work_items w ON w.id=e.work_item_id "
-            "JOIN buildings b ON b.id=w.building_id "
-            "WHERE w.discipline=? AND b.project_id=? AND e.{}<=? AND e.recorded_at<=? ORDER BY e.id".format(table, date_column),
-            (discipline.value, self.project_id, report_date, knowledge_cutoff))
-        values = {}
-        for row in rows:
-            values.setdefault(row["work_item_id"], []).append(Decimal(row["quantity_delta"]))
-        return {key: exact_sum(deltas) for key, deltas in values.items()}
+        kind = "fact" if table == "fact_events" else "confirmation"
+        return EventRepository(self.db, self.project_id).cumulative_quantities(
+            kind, report_date, knowledge_cutoff, discipline=discipline.value)
 
     def compare_dates(self, before_date, after_date, knowledge_cutoff, plan_version_id):
         """Same approved baseline and knowledge time: changes reflect events only."""
