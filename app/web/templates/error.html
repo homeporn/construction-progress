@@ -1,0 +1,4 @@
+{% extends 'base.html' %}
+{% block title %}Операция не выполнена{% endblock %}
+{% block heading %}Операция не выполнена{% endblock %}
+{% block content %}<section class="panel error-panel"><div class="notice error" role="alert">{{ message }}</div><p class="muted">Проверьте введённые данные и повторите действие.</p><a class="button secondary" href="{{ back_url }}">Вернуться к разделу</a></section>{% endblock %}

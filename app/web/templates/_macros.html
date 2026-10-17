@@ -1,0 +1,10 @@
+{% macro csrf() %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endmacro %}
+{% macro badge(status) %}<span class="badge {{ status.value if status.value is defined else status }}">{{ status_labels[status] }}</span>{% endmacro %}
+{% macro meter(value) %}{% if value is not none %}<progress value="{{ value }}" max="1" aria-label="Готовность {{ value|percent }}"></progress>{% else %}<div class="empty-meter"></div>{% endif %}{% endmacro %}
+{% macro dates(report_date, cutoff) %}
+  <label>Дата отчёта<input type="date" name="report_date" value="{{ report_date }}" required></label>
+  <label class="wide-field">Отсечение знаний <span class="muted">(часовой пояс обязателен)</span><input name="knowledge_cutoff" value="{{ cutoff }}" placeholder="2026-01-31T18:00:00Z" maxlength="40"></label>
+{% endmacro %}
+{% macro issues(report) %}
+  {% if report and report.issues %}<section class="panel issue-panel"><h2>Проверка исходных данных</h2>{% for issue in report.issues %}<div class="issue {{ issue.status.value }}">{{ badge(issue.status) }} {{ issue.message }}</div>{% endfor %}</section>{% endif %}
+{% endmacro %}

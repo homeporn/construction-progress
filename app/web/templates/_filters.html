@@ -1,0 +1,13 @@
+{% from '_macros.html' import dates with context %}
+<form method="get" class="panel filters" data-dependent-form>
+  <div class="filter-grid">
+    <label>Направление<select aria-label="Направление" name="discipline" data-reset-version>{% for key,label in discipline_labels.items() %}<option value="{{ key }}" {% if discipline.value==key %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></label>
+    <label>Корпус<select aria-label="Корпус" name="building_id" data-building><option value="">Все корпуса</option>{% for building in buildings %}<option value="{{ building.id }}" {% if filters.building_id==building.id %}selected{% endif %}>{{ building.name }}</option>{% endfor %}</select></label>
+    <label>Этаж<select aria-label="Этаж" name="floor_id" data-floor><option value="">Все этажи</option>{% for floor in floors %}<option value="{{ floor.id }}" data-building="{{ floor.building_id }}" {% if filters.floor_id==floor.id %}selected{% endif %}>{{ floor.building_name }} · {{ floor.floor_code }}</option>{% endfor %}</select></label>
+    <label>Конструктивный элемент<select aria-label="Конструктивный элемент" name="element"><option value="">Все элементы</option>{% for element in elements %}<option {% if filters.element==element %}selected{% endif %}>{{ element }}</option>{% endfor %}</select></label>
+    <label>Вид работ<select aria-label="Вид работ" name="work_type"><option value="">Все виды работ</option>{% for work_type in work_types %}<option {% if filters.work_type==work_type %}selected{% endif %}>{{ work_type }}</option>{% endfor %}</select></label>
+    <label>Версия плана<select aria-label="Версия плана" name="version_id"><option value="">Выбрать автоматически</option>{% for v in versions %}<option value="{{ v.id }}" {% if version and version.id==v.id %}selected{% endif %}>Версия {{ v.version_no }} · {{ status_labels[v.status] }}</option>{% endfor %}</select></label>
+    {{ dates(report_date, cutoff) }}
+    <div class="filter-actions"><button type="submit">Применить</button><a class="button secondary" href="{{ url_for(request.endpoint) }}">Сбросить</a></div>
+  </div>
+</form>

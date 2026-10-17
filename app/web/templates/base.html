@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Construction Progress{% endblock %} · Construction Progress</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
+  <link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}" type="image/svg+xml">
+  <script src="{{ url_for('static', filename='js/app.js') }}" defer></script>
+</head>
+<body>
+  <aside class="sidebar">
+    <a class="brand" href="{{ url_for('dashboard.index') }}"><span class="brand-mark">CP</span><span>Construction<br><strong>Progress</strong></span></a>
+    <div class="workspace"><span class="eyebrow">РАБОЧЕЕ ПРОСТРАНСТВО</span><strong>Строительный проект</strong><span class="muted">Корпуса А, B, C</span></div>
+    <nav aria-label="Основная навигация">
+      {% for endpoint, label, symbol in [('dashboard.index','Сводка','◫'),('buildings.index','Корпуса и этажи','▤'),('catalog.index','Кодификатор','≡'),('volumes.index','Ведомость объёмов','▦'),('events.facts','Фактическое выполнение','✓'),('events.confirmations','Подтверждение','▣'),('progress.index','История прогресса','◷')] %}
+      <a href="{{ url_for(endpoint) }}" class="nav-link {% if request.endpoint == endpoint %}active{% endif %}" {% if request.endpoint == endpoint %}aria-current="page"{% endif %}><span aria-hidden="true">{{ symbol }}</span>{{ label }}</a>
+      {% endfor %}
+    </nav>
+    <div class="sidebar-bottom"><span class="local-status"><i></i> Локальное приложение</span><span class="muted">Все данные на этом компьютере</span>
+      <form method="post" action="{{ url_for('shutdown') }}" data-confirm="Завершить работу локального сервера?">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button class="button-quiet" type="submit">Завершить работу →</button>
+      </form>
+    </div>
+  </aside>
+  <div class="main-shell">
+    <header class="topbar"><span>Управление строительством <span class="crumb">/</span> Физические объёмы</span><span class="offline-badge">Офлайн</span></header>
+    <main id="main">
+      <div class="page-heading"><div><div class="eyebrow">CONSTRUCTION PROGRESS</div><h1>{% block heading %}{% endblock %}</h1><p class="subtitle">{% block subtitle %}{% endblock %}</p></div>{% block heading_action %}{% endblock %}</div>
+      {% for category, message in get_flashed_messages(with_categories=true) %}<div class="notice {{ category }}" role="status">{{ message }}</div>{% endfor %}
+      {% block content %}{% endblock %}
+    </main>
+    <footer>Construction Progress <span>Локальная SQLite · Этап 2</span></footer>
+  </div>
+</body>
+</html>

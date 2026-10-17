@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import dates, meter, badge with context %}
+{% block title %}Сводка{% endblock %}
+{% block heading %}Сводка проекта{% endblock %}
+{% block subtitle %}Физический прогресс по утверждённым объёмам и нормативной трудоёмкости{% endblock %}
+{% block heading_action %}<a class="button" href="{{ url_for('volumes.index') }}">Открыть ведомость →</a>{% endblock %}
+{% block content %}
+<form class="panel date-toolbar" method="get">{{ dates(report_date, cutoff) }}<button class="secondary" type="submit">Обновить срез</button></form>
+<div class="section-label"><h2>Показатели готовности</h2><span class="muted">На {{ report_date }} · Направления рассчитываются отдельно</span></div>
+<section class="metrics">
+{% for section in sections %}
+  {% for key,label in [('actual_progress','Физическая'),('confirmed_progress','Подтверждённая')] %}
+    {% set value=section.total|attr(key) %}
+    <article class="metric"><div class="metric-label">{{ label }} готовность {{ 'СМР' if section.discipline.value=='CONSTRUCTION' else 'проектирования' }}</div>
+      <div class="metric-value {% if value is none %}no-data{% endif %}">{{ value|percent }}</div>{{ meter(value) }}
+      <div class="metric-foot">{% if section.version %}Версия {{ section.version.version_no }} · {{ badge(section.total.status) }}{% else %}Нет утверждённого плана{% endif %}</div>
+    </article>
+  {% endfor %}
+{% endfor %}
+</section>
+<div class="section-label"><h2>Прогресс по корпусам</h2><span class="muted">Факт / подтверждено</span></div>
+<section class="building-grid">
+{% for building in buildings %}<article class="panel building-card"><div class="building-title"><span class="building-symbol">▥</span><h3>{{ building.name }}</h3><a href="{{ url_for('volumes.index',building_id=building.id) }}" aria-label="Ведомость {{ building.name }}">→</a></div>
+  {% for section in sections %}{% set group=section.buildings[building.id] %}<div class="building-progress"><div class="spread"><span>{{ discipline_labels[section.discipline] }}</span><strong>{{ group.actual_progress|percent }}</strong></div>{{ meter(group.actual_progress) }}<small class="muted">Подтверждено: {{ group.confirmed_progress|percent }}</small></div>{% endfor %}
+</article>{% endfor %}
+</section>
+<div class="bottom-grid">
+  <section class="panel"><div class="panel-heading"><h2>Активные версии планов</h2><a href="{{ url_for('volumes.index') }}">Управление →</a></div><div class="table-scroll"><table><thead><tr><th>Направление</th><th>Версия</th><th>Статус</th></tr></thead><tbody>{% for section in sections %}<tr><td>{{ discipline_labels[section.discipline] }}</td><td>{{ section.version.version_no if section.version else '—' }}</td><td>{% if section.version %}{{ badge(section.version.status) }}{% else %}<span class="muted">Нет данных</span>{% endif %}</td></tr>{% endfor %}</tbody></table></div></section>
+  <section class="panel quality-panel"><h2>Проверка исходных данных</h2><strong class="quality-count {% if errors %}danger-text{% endif %}">{{ errors|length }}</strong><span class="muted">ошибок в выбранном срезе утверждённых планов</span>{% for issue in errors %}<p class="danger-text">{{ issue.message }}</p>{% else %}<p>Критических ошибок расчёта не обнаружено.</p>{% endfor %}<a href="{{ url_for('progress.index') }}">Проверить историю прогресса →</a></section>
+</div>
+{% if not sections[0].version and not sections[1].version %}<section class="panel onboarding"><div><h2>Начните с плановых объёмов</h2><p class="muted">Добавьте этажи, выберите работы из кодификатора и утвердите первую версию плана.</p></div><a class="button secondary" href="{{ url_for('buildings.index') }}">Добавить этажи →</a></section>{% endif %}
+{% endblock %}

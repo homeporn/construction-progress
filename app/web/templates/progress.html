@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import badge, issues, meter with context %}
+{% block title %}История прогресса{% endblock %}
+{% block heading %}История прогресса{% endblock %}
+{% block subtitle %}Состояние на отчётную дату с учётом сведений, зарегистрированных до отсечения знаний{% endblock %}
+{% block content %}
+{% include '_filters.html' %}
+<section class="panel snapshot-heading"><div><h2>{{ discipline_labels[discipline] }} · Срез на {{ report_date }}</h2><p class="muted">{% if version %}План: версия {{ version.version_no }} · {{ status_labels[version.status] }}{% else %}Нет доступной утверждённой версии плана{% endif %}</p><p class="help">Отсечение знаний: {{ cutoff }} · Границы включительные</p></div>{{ badge(report.status if report else total.status) }}</section>
+<section class="metrics history-metrics">
+<article class="metric"><div class="metric-label">Фактическая готовность</div><div class="metric-value {% if total.actual_progress is none %}no-data{% endif %}">{{ total.actual_progress|percent }}</div>{{ meter(total.actual_progress) }}</article>
+<article class="metric"><div class="metric-label">Подтверждённая готовность</div><div class="metric-value {% if total.confirmed_progress is none %}no-data{% endif %}">{{ total.confirmed_progress|percent }}</div>{{ meter(total.confirmed_progress) }}</article>
+<article class="metric"><div class="metric-label">Плановая трудоёмкость</div><div class="metric-value compact-value">{{ total.planned_labor|number }}</div><div class="muted">чел.-ч</div></article>
+<article class="metric"><div class="metric-label">Остаток трудоёмкости по факту</div><div class="metric-value compact-value">{{ total.remaining_labor|number }}</div><div class="muted">чел.-ч</div></article>
+</section>
+{{ issues(report) }}
+<section class="panel"><div class="panel-heading"><h2>Позиции выбранного среза</h2><span class="muted">Объёмы разных единиц не суммируются</span></div><div class="table-scroll"><table><thead><tr><th>Код / работа</th><th>Расположение</th><th>Ед.</th><th class="numeric">План</th><th class="numeric">Факт</th><th class="numeric">Подтверждено</th><th class="numeric">Остаток</th><th class="numeric">Перевыполнение</th><th class="numeric">Готовность</th><th>Статус</th></tr></thead><tbody>
+{% for item in items if item.id in results %}{% set result=results[item.id] %}<tr><td><span class="code">{{ item.code }}</span><small>{{ item.name }}</small></td><td>{{ item.building_name }}<small class="muted">Этаж {{ item.floor_code }} · {{ item.element }}</small></td><td>{{ item.unit }}</td><td class="numeric">{{ result.source.planned_quantity|number }}</td><td class="numeric">{{ result.source.actual|number }}</td><td class="numeric">{{ result.source.confirmed|number }}</td><td class="numeric">{{ result.remaining_quantity|number }}</td><td class="numeric">{{ result.overrun_quantity|number }}</td><td class="numeric"><strong>{{ result.actual_progress|percent }}</strong><small class="muted">Подтв. {{ result.confirmed_progress|percent }}</small></td><td>{{ badge(result.status) }}</td></tr>{% else %}<tr><td colspan="10" class="empty-cell">Нет данных для выбранного среза</td></tr>{% endfor %}
+</tbody></table></div></section>
+<p class="help">Поздняя регистрация входит только в срезы с соответствующим моментом знаний. Изменение плановых объёмов относится к новой версии плана и не является приростом выполнения.</p>
+{% endblock %}

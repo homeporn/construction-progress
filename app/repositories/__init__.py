@@ -1,0 +1,1 @@
+"""Transactional SQLite repositories."""

@@ -1,0 +1,14 @@
+.venv/
+.venv.before-repair-*/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+data/*
+!data/.gitkeep
+*.sqlite3
+*.sqlite3-journal
+*.sqlite3-wal
+*.sqlite3-shm
+.DS_Store
