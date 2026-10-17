@@ -3,13 +3,13 @@ from flask import request
 from app.calculation_engine.models import GroupProgress, Status
 from app.repositories.work_repository import WorkRepository
 from app.services.progress_service import ProgressService
-from . import get_db
+from . import get_db, current_project_id
 from .forms import InputError, discipline, integer, item_filters, report_dates
 
 
 def work_context(*, historical=False):
     db = get_db()
-    repo = WorkRepository(db)
+    repo = WorkRepository(db, current_project_id())
     direction, filters = discipline(request.args), item_filters(request.args)
     report_date, cutoff = report_dates(request.args)
     floors, buildings, catalog = repo.list_floors(), repo.list_buildings(), repo.list_catalog()
@@ -29,7 +29,7 @@ def work_context(*, historical=False):
     else:
         version = versions[0] if versions else None
     preview = bool(version and version["status"] == "DRAFT" and not historical)
-    service = ProgressService(db)
+    service = ProgressService(db, current_project_id())
     report = service.plan_view(report_date, cutoff, version["id"] if version else None, preview=preview)
     report_items = service.filtered_items(report, filters)
     total = (service.group(report_items) if report and report.items else

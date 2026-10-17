@@ -11,6 +11,8 @@ def aggregate(items):
     if not items:
         return GroupProgress(status=Status.NO_DATA)
     issues = tuple(issue for item in items for issue in item.issues)
+    if len({item.source.project_id for item in items}) != 1:
+        issues += (Issue("MIXED_PROJECTS", "Данные разных объектов нельзя объединять"),)
     disciplines = {item.source.discipline for item in items}
     ids = [item.source.work_item_id for item in items]
     if len(disciplines) != 1:
@@ -34,6 +36,9 @@ def aggregate(items):
 
 def group_by(items, dimension):
     """Keys always include discipline, and floors additionally include building."""
+    items = list(items)
+    if len({item.source.project_id for item in items}) > 1:
+        raise ValueError("Данные разных объектов нельзя объединять в отчёт")
     if dimension not in DIMENSIONS:
         raise ValueError("Unsupported aggregation dimension")
     buckets = defaultdict(list)

@@ -9,6 +9,7 @@ from app.config import DEFAULT_DB_PATH
 from app.database import connect, initialize
 from app.decimal_utils import multiply
 from app.repositories.base import ValidationError
+from app.repositories.project_repository import ProjectRepository
 from app.time_utils import instant
 from .forms import InputError
 
@@ -23,6 +24,19 @@ def csrf_token():
     if "csrf_token" not in session:
         session["csrf_token"] = secrets.token_urlsafe(32)
     return session["csrf_token"]
+
+
+def current_project():
+    if "project" not in g:
+        repo = ProjectRepository(get_db())
+        project_id = session.get("project_id", 1)
+        g.project = repo.get_project(project_id)
+        session["project_id"] = g.project["id"]
+    return g.project
+
+
+def current_project_id():
+    return current_project()["id"]
 
 
 def create_app(config=None):
@@ -55,6 +69,11 @@ def create_app(config=None):
             supplied = request.form.get("csrf_token", "")
             stored = session.get("csrf_token", "")
             if not supplied or not stored or not secrets.compare_digest(supplied.encode("utf-8"), stored.encode("utf-8")):
+                abort(403)
+            # Prevent a form left open in another tab from writing into a newly
+            # selected workspace. Foreign record IDs are also checked by repositories.
+            workspace = request.form.get("workspace_id")
+            if workspace is not None and workspace != str(current_project_id()):
                 abort(403)
 
     @app.after_request
@@ -92,6 +111,8 @@ def create_app(config=None):
     @app.context_processor
     def shared_context():
         return dict(csrf_token=csrf_token, today=instant()[:10],
+                    current_project=current_project(),
+                    workspaces=ProjectRepository(get_db()).list_projects(),
                     discipline_labels={"CONSTRUCTION": "СМР", "DESIGN": "Проектирование"},
                     status_labels={"VALID": "Корректно", "WARNING": "Предупреждение", "INVALID": "Ошибка",
                                    "NO_DATA": "Нет данных", "DRAFT": "Черновик", "APPROVED": "Утверждён"})
@@ -100,7 +121,7 @@ def create_app(config=None):
     @app.errorhandler(ValueError)
     def validation_error(error):
         message = str(error) if isinstance(error, InputError) else translate_error(str(error))
-        endpoint = {"buildings": "buildings.index", "catalog": "catalog.index", "volumes": "volumes.index",
+        endpoint = {"projects": "projects.index", "buildings": "buildings.index", "catalog": "catalog.index", "volumes": "volumes.index",
                     "events": "events.confirmations" if request.path == "/confirmations" else "events.facts",
                     "progress": "progress.index"}.get(request.blueprint, "dashboard.index")
         return render_template("error.html", message=message, back_url=url_for(endpoint)), 400
@@ -118,8 +139,8 @@ def create_app(config=None):
             code, message = 500, "Не удалось выполнить операцию. Данные не сохранены. Проверьте доступность базы и повторите запрос."
         return render_template("error.html", message=message, back_url="/"), code
 
-    from .routes import dashboard, buildings, catalog, volumes, events, progress
-    for module in (dashboard, buildings, catalog, volumes, events, progress):
+    from .routes import dashboard, buildings, catalog, volumes, events, progress, projects
+    for module in (dashboard, buildings, catalog, volumes, events, progress, projects):
         app.register_blueprint(module.bp)
 
     @app.post("/shutdown")

@@ -36,6 +36,7 @@ class WorkInput:
     element: str = ""
     work_type: str = ""
     in_plan: bool = True
+    project_id: int = 1
 
 
 @dataclass(frozen=True)

@@ -67,7 +67,7 @@ def test_referenced_classification_cannot_change_history(db, item, plan):
     for sql in ("UPDATE work_items SET catalog_id=2 WHERE id=?",
                 "UPDATE work_catalog SET unit='шт' WHERE id=1",
                 "UPDATE floors SET floor_code='новый' WHERE id=1",
-                "UPDATE buildings SET name='новый' WHERE id=1"):
+                "UPDATE buildings SET project_id=999 WHERE id=1"):
         with pytest.raises(sqlite3.IntegrityError):
             db.execute(sql, (item,) if "?" in sql else ())
 

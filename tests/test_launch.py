@@ -99,11 +99,12 @@ def diagnostic_ports(monkeypatch):
 
 def test_diagnose_is_read_only_and_does_not_apply_pending_migration(db, capsys, diagnostic_ports):
     path = Path(db.execute("PRAGMA database_list").fetchone()["file"])
-    db.execute("DELETE FROM schema_migrations WHERE name='003_web_workflow.sql'")
+    total = db.execute("SELECT count(*) FROM schema_migrations").fetchone()[0]
+    db.execute("DELETE FROM schema_migrations WHERE name='004_projects.sql'")
     before = (file_hash(path), path.stat().st_mtime_ns)
     assert diagnostics.diagnose(path) == 0
     assert before == (file_hash(path), path.stat().st_mtime_ns)
-    assert db.execute("SELECT count(*) FROM schema_migrations").fetchone()[0] == 2
+    assert db.execute("SELECT count(*) FROM schema_migrations").fetchone()[0] == total - 1
     output = capsys.readouterr().out
     assert "ожидает запуска 1" in output
     assert "Проверка" in output or "диагностика" in output

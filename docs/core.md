@@ -21,7 +21,7 @@ db = initialize("data/example.sqlite3")
 work = WorkRepository(db)
 events = EventRepository(db)
 
-building_id = db.execute("SELECT id FROM buildings WHERE code='A'").fetchone()[0]
+building_id = db.execute("SELECT id FROM buildings WHERE project_id=1 AND code='A'").fetchone()[0]
 catalog_id = db.execute("SELECT id FROM work_catalog WHERE code='ОТД.СТ.01'").fetchone()[0]
 floor_id = work.add_floor(building_id, "1", 1)
 item_id = work.add_work_item(building_id, floor_id, catalog_id, Discipline.CONSTRUCTION)
@@ -53,7 +53,7 @@ db.close()
 Утверждённый план менять нельзя. `create_plan_version(base_version_id=...)`
 копирует его в новый черновик, где разрешён `update_plan_line()`.
 Без базовой версии создаётся пустой черновик. Номер версии назначается отдельно
-по каждой дисциплине под блокировкой записи. Утверждение пустого плана, нулевого
+по каждой паре объект/дисциплина под блокировкой записи. Утверждение пустого плана, нулевого
 объёма или строки без положительного норматива запрещено. Старые версии сохраняются.
 Сравнение версий возвращает изменения объёмов, норм и трудоёмкостей, не прирост факта.
 
@@ -120,7 +120,7 @@ events.add_fact(item_id, "-20", "2026-01-10", event_key="journal-fix-0001",
 Консольный исторический отчёт:
 
 ```bash
-./start.command --plan-version 1 --report-date 2026-01-31 --knowledge-cutoff 2026-02-05T18:00:00Z
+./start.command --project-id 1 --plan-version 1 --report-date 2026-01-31 --knowledge-cutoff 2026-02-05T18:00:00Z
 ```
 
 ### Расчёт и агрегация
@@ -175,3 +175,32 @@ P_actual = T_earned / T_plan
 `WorkRepository` расширен операциями чтения, `delete_floor()`, `reorder_floor()`
 и `update_catalog_entry()`. Все записи по-прежнему транзакционны.
 `EventRepository.add_confirmation(..., comment="...")` сохраняет отдельный комментарий.
+
+## Объекты (этап 3.1)
+
+Указывайте одну и ту же область во всех сервисах:
+
+```python
+from app.repositories.project_repository import ProjectRepository
+project_id = ProjectRepository(db).create_project(
+    "Школа", "ШК", buildings=[{"code": "К1", "name": "Учебный"}, {"code": "К2", "name": "Спортивный"}])
+work = WorkRepository(db, project_id=project_id)
+events = EventRepository(db, project_id=project_id)
+calculator = HistoricalCalculator(db, project_id=project_id)
+```
+
+Значение `project_id=1` по умолчанию сохраняет совместимость Python API с прежним
+единственным объектом. Flask всегда передаёт текущий объект явно. Чтение чужой версии
+или запись в чужой корпус/позицию отклоняются; чужая версия в историческом калькуляторе
+даёт `INVALID / PLAN_UNAVAILABLE`. `ProgressService(db, project_id)` также ограничен объектом.
+Вход чистой арифметики `WorkInput` содержит `project_id`; смешанная агрегация даёт
+`INVALID / MIXED_PROJECTS`. Для `group_by()` передавайте предварительно проверенную
+выборку одного объекта. Формулы Decimal не изменены.
+
+`available_work_items(discipline, **filters)` возвращает работы текущего утверждённого
+плана. Черновики и исключённые строки в этот список не входят. `remove_plan_line()`
+удаляет только строку черновика, сохраняя позицию, старые планы и журналы. Новая запись
+из веб-формы требует доступной плановой позиции. Корректировки истории доступны отдельно.
+Прежняя строгая проверка `MISSING_PLAN_LINE` сохранена: если видимые события остались
+вне выбранного плана, отчёт помечается INVALID. Для достоверного исторического отчёта
+выбирайте версию, содержащую эти работы, или согласуйте состав новой ведомости.

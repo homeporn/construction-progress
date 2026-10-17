@@ -7,10 +7,10 @@ from app.repositories.work_repository import WorkRepository
 
 class ProgressService:
     """Select baselines and call the existing engine; no independent formulas."""
-    def __init__(self, db):
+    def __init__(self, db, project_id=1):
         self.db = db
-        self.work = WorkRepository(db)
-        self.calculator = HistoricalCalculator(db)
+        self.work = WorkRepository(db, project_id)
+        self.calculator = HistoricalCalculator(db, project_id)
 
     def dashboard(self, report_date, knowledge_cutoff):
         with read_snapshot(self.db):

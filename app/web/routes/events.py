@@ -4,14 +4,14 @@ from flask import Blueprint, flash, redirect, render_template, request, url_for
 from app.repositories.event_repository import EventRepository
 from app.repositories.work_repository import WorkRepository
 from app.time_utils import instant
-from app.web import get_db
-from app.web.forms import InputError, business_date, discipline, integer, quantity, text
+from app.web import get_db, current_project_id
+from app.web.forms import InputError, business_date, discipline, integer, quantity, text, item_filters
 
 bp = Blueprint("events", __name__)
 
 
 def journal(kind):
-    repo, event_repo = WorkRepository(get_db()), EventRepository(get_db())
+    repo, event_repo = WorkRepository(get_db(), current_project_id()), EventRepository(get_db(), current_project_id())
     direction = discipline(request.args if request.method == "GET" else request.form)
     confirmation = kind == "confirmation"
     if request.method == "POST":
@@ -23,6 +23,8 @@ def journal(kind):
             raise InputError("Позиция не относится к выбранному направлению, корпусу или этажу.")
         delta = quantity(data, "quantity_delta", "Объём", signed=True)
         correction = integer(data, "correction_of_id", "Исходное событие", optional=True)
+        if correction is None and item_id not in {row["id"] for row in repo.available_work_items(direction)}:
+            raise InputError("Позиция не входит в действующий утверждённый план. Утвердите ведомость или выберите корректировку истории.")
         if delta == 0 or (delta < 0 and not correction):
             raise InputError("Объём должен быть ненулевым. Для уменьшения выберите исходное событие корректировки.")
         date = business_date(data, "business_date")
@@ -37,10 +39,25 @@ def journal(kind):
             event_repo.add_fact(item_id, delta, date, **kwargs)
         flash("Подтверждение зарегистрировано." if confirmation else "Фактическое выполнение зарегистрировано.", "success")
         return redirect(url_for("events.confirmations" if confirmation else "events.facts", discipline=direction.value), code=303)
-    items = repo.list_work_items(discipline=direction.value)
+    filters = item_filters(request.args)
+    buildings, floors = repo.list_buildings(), repo.list_floors()
+    if filters["building_id"] and filters["building_id"] not in {b["id"] for b in buildings}:
+        raise InputError("Корпус не принадлежит текущему объекту.")
+    if filters["floor_id"] and not any(f["id"] == filters["floor_id"] and
+            (not filters["building_id"] or f["building_id"] == filters["building_id"]) for f in floors):
+        raise InputError("Этаж не найден в выбранном корпусе.")
     rows = [r for r in event_repo.list_events(kind) if r["discipline"] == direction.value]
+    correction_mode = request.args.get("correction") == "1"
+    items = repo.list_work_items(discipline=direction.value, **filters) if correction_mode else repo.available_work_items(direction, **filters)
+    if correction_mode:
+        ids = {row["work_item_id"] for row in rows}
+        items = [item for item in items if item["id"] in ids]
+    rows = [r for r in rows if all(value in (None, "") or r[key] == value for key, value in filters.items())]
+    catalog = repo.list_catalog()
     return render_template("events.html", confirmation=confirmation, discipline=direction, items=items,
-                           buildings=repo.list_buildings(), floors=repo.list_floors(), events=rows,
+                           buildings=buildings, floors=floors, events=rows, filters=filters,
+                           elements=sorted({r["element"] for r in catalog}), work_types=sorted({r["work_type"] for r in catalog}),
+                           correction_mode=correction_mode,
                            event_key=secrets.token_urlsafe(24))
 
 

@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import csrf with context %}
+{% block title %}Новый объект{% endblock %}
+{% block heading %}Создать объект{% endblock %}
+{% block subtitle %}Объект и все указанные корпуса сохраняются одной операцией{% endblock %}
+{% block content %}
+<form method="post" class="panel" data-project-create>{{ csrf() }}
+<h2>Общие данные</h2><div class="form-grid">
+<label>Наименование объекта<input name="name" maxlength="200" placeholder="Школа" required></label>
+<label>Код объекта<input name="code" maxlength="80" placeholder="ШК-01" required></label>
+<label class="full-width">Описание<textarea name="description" maxlength="4000" rows="3"></textarea></label>
+</div><h2>Корпуса</h2>
+<label>Количество корпусов<input type="number" name="building_count" value="1" min="0" step="1" data-building-count required></label>
+<p class="help">Укажите количество и заполните строки. Коды уникальны внутри объекта. Этажи автоматически не создаются.</p>
+<div class="table-scroll"><table><thead><tr><th>Код корпуса</th><th>Название корпуса</th></tr></thead><tbody data-building-rows><tr><td><input name="building_code" value="К1" maxlength="80" aria-label="Код корпуса 1" required></td><td><input name="building_name" value="Корпус 1" maxlength="200" aria-label="Название корпуса 1" required></td></tr></tbody></table></div>
+<noscript><p class="notice">Для создания нескольких корпусов включите JavaScript. Без него можно создать объект с одним корпусом, затем добавить остальные на странице объекта.</p></noscript>
+<div class="form-footer"><a class="button secondary" href="{{ url_for('projects.index') }}">Отмена</a><button type="submit">Создать объект и корпуса</button></div>
+</form>
+{% endblock %}

@@ -11,9 +11,12 @@
 <body>
   <aside class="sidebar">
     <a class="brand" href="{{ url_for('dashboard.index') }}"><span class="brand-mark">CP</span><span>Construction<br><strong>Progress</strong></span></a>
-    <div class="workspace"><span class="eyebrow">РАБОЧЕЕ ПРОСТРАНСТВО</span><strong>Строительный проект</strong><span class="muted">Корпуса А, B, C</span></div>
+    <div class="workspace"><span class="eyebrow">РАБОЧЕЕ ПРОСТРАНСТВО</span>
+      <form method="post" action="{{ url_for('projects.select') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="workspace_id" value="{{ current_project.id }}">
+        <label>Объект<select name="project_id" aria-label="Текущий объект">{% for p in workspaces %}<option value="{{ p.id }}" {% if p.id==current_project.id %}selected{% endif %}>{{ p.name }}{{ ' · архив' if p.status=='archived' else '' }}</option>{% endfor %}</select></label><button type="submit" class="small secondary">Выбрать</button>
+      </form><a href="{{ url_for('projects.detail',project_id=current_project.id) }}">Настройки объекта →</a></div>
     <nav aria-label="Основная навигация">
-      {% for endpoint, label, symbol in [('dashboard.index','Сводка','◫'),('buildings.index','Корпуса и этажи','▤'),('catalog.index','Кодификатор','≡'),('volumes.index','Ведомость объёмов','▦'),('events.facts','Фактическое выполнение','✓'),('events.confirmations','Подтверждение','▣'),('progress.index','История прогресса','◷')] %}
+      {% for endpoint, label, symbol in [('dashboard.index','Сводка','◫'),('projects.index','Объекты','▥'),('buildings.index','Корпуса и этажи','▤'),('catalog.index','Кодификатор','≡'),('volumes.index','Ведомость объёмов','▦'),('events.facts','Фактическое выполнение','✓'),('events.confirmations','Подтверждение','▣'),('progress.index','История прогресса','◷')] %}
       <a href="{{ url_for(endpoint) }}" class="nav-link {% if request.endpoint == endpoint %}active{% endif %}" {% if request.endpoint == endpoint %}aria-current="page"{% endif %}><span aria-hidden="true">{{ symbol }}</span>{{ label }}</a>
       {% endfor %}
     </nav>
@@ -29,9 +32,10 @@
     <main id="main">
       <div class="page-heading"><div><div class="eyebrow">CONSTRUCTION PROGRESS</div><h1>{% block heading %}{% endblock %}</h1><p class="subtitle">{% block subtitle %}{% endblock %}</p></div>{% block heading_action %}{% endblock %}</div>
       {% for category, message in get_flashed_messages(with_categories=true) %}<div class="notice {{ category }}" role="status">{{ message }}</div>{% endfor %}
+      {% if current_project.status=='archived' %}<div class="notice" role="status">Объект в архиве: учётные данные доступны для просмотра. Для продолжения работы восстановите объект в настройках.</div>{% endif %}
       {% block content %}{% endblock %}
     </main>
-    <footer>Construction Progress <span>Локальная SQLite · Этап 2</span></footer>
+    <footer>Construction Progress <span>Локальная SQLite · Объекты и рабочие пространства</span></footer>
   </div>
 </body>
 </html>

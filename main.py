@@ -10,6 +10,7 @@ from app.database import initialize
 from app.calculation_engine.historical import HistoricalCalculator
 from app.repositories.event_repository import EventRepository
 from app.repositories.work_repository import WorkRepository
+from app.repositories.project_repository import ProjectRepository
 
 
 def json_value(value):
@@ -45,6 +46,7 @@ def main():
     parser.add_argument("--db", help="Путь к рабочей SQLite-базе; по умолчанию data/construction_progress.sqlite3")
     parser.add_argument("--demo", action="store_true", help="Пример в памяти: 60%% факта, 45%% подтверждения")
     parser.add_argument("--plan-version", type=int, help="Номер записи версии для консольного отчёта")
+    parser.add_argument("--project-id", type=int, default=1, help="ID объекта для консольного отчёта; по умолчанию 1")
     parser.add_argument("--report-date", help="Дата отчёта в формате ГГГГ-ММ-ДД")
     parser.add_argument("--knowledge-cutoff", help="Момент знаний ISO с часовым поясом, например 2026-10-17T18:00:00Z")
     parser.add_argument("--cli", action="store_true", help="Показать сводку базы в консоли без запуска сервера")
@@ -53,6 +55,8 @@ def main():
     parser.add_argument("--check", action="store_true", help="Офлайн-диагностика без запуска сервера и изменения базы")
     parser.add_argument("--test-db", action="store_true", help="Отдельная сохраняемая база приёмки data/acceptance/acceptance.sqlite3")
     args = parser.parse_args()
+    if args.project_id < 1:
+        parser.error("ID объекта должен быть положительным целым числом")
     try:
         args.db = select_database(args.db, test_database=args.test_db)
     except (ValueError, OSError) as exc:
@@ -84,20 +88,22 @@ def main():
             return 0
         db = initialize(args.db)
         try:
+            project = ProjectRepository(db).get_project(args.project_id)
             if args.plan_version:
-                result = HistoricalCalculator(db).calculate_as_of(
+                result = HistoricalCalculator(db, args.project_id).calculate_as_of(
                     args.report_date, args.knowledge_cutoff, args.plan_version)
                 print(json.dumps(asdict(result), default=json_value, ensure_ascii=False, indent=2))
                 return 2 if result.status.value == "INVALID" else 0
             print("Construction Progress — локальная база")
             print("База:", args.db)
-            for row in db.execute("SELECT code,name FROM buildings ORDER BY id"):
+            print("Объект:", project["name"])
+            for row in WorkRepository(db, args.project_id).list_buildings():
                 print("{}: {}".format(row["code"], row["name"]))
             print("Кодов работ:", db.execute("SELECT count(*) FROM work_catalog").fetchone()[0])
             print("Пример расчёта: python main.py --demo")
         finally:
             db.close()
-    except (ValueError, sqlite3.Error, OSError) as exc:
+    except (ValueError, sqlite3.Error, OSError, RuntimeError) as exc:
         print("Ошибка:", exc)
         return 2
     return 0

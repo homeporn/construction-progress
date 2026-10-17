@@ -23,8 +23,9 @@ def read_snapshot(db):
 
 
 class HistoricalCalculator:
-    def __init__(self, db):
+    def __init__(self, db, project_id=1):
         self.db = db
+        self.project_id = project_id
 
     def calculate_as_of(self, report_date, knowledge_cutoff, plan_version_id):
         report_date, knowledge_cutoff = day(report_date), instant(knowledge_cutoff)
@@ -38,7 +39,8 @@ class HistoricalCalculator:
             return self._calculate(report_date, knowledge_cutoff, plan_version_id, allow_draft=True)
 
     def _calculate(self, report_date, knowledge_cutoff, version_id, allow_draft=False):
-        version = self.db.execute("SELECT * FROM plan_versions WHERE id=?", (version_id,)).fetchone()
+        version = self.db.execute("SELECT * FROM plan_versions WHERE id=? AND project_id=?",
+                                  (version_id, self.project_id)).fetchone()
         discipline = Discipline(version["discipline"]) if version else None
         available_at = (version["created_at"] if allow_draft and version and version["status"] == "DRAFT"
                         else version["approved_at"] if version else None)
@@ -51,8 +53,10 @@ class HistoricalCalculator:
             "SELECT w.id,w.building_id,w.floor_id,w.discipline,c.element,c.work_type,c.unit," 
             "p.id AS line_id,p.planned_quantity,p.labor_norm,p.unit AS plan_unit "
             "FROM work_items w JOIN work_catalog c ON c.id=w.catalog_id "
+            "JOIN buildings b ON b.id=w.building_id "
             "LEFT JOIN plan_lines p ON p.work_item_id=w.id AND p.plan_version_id=? "
-            "WHERE w.discipline=? ORDER BY w.id", (version_id, discipline.value)).fetchall()
+            "WHERE w.discipline=? AND b.project_id=? ORDER BY w.id",
+            (version_id, discipline.value, self.project_id)).fetchall()
         actual = self._volumes("fact_events", "work_date", discipline, report_date, knowledge_cutoff)
         confirmed = self._volumes("confirmation_events", "confirmed_date", discipline, report_date, knowledge_cutoff)
         results = []
@@ -69,7 +73,8 @@ class HistoricalCalculator:
                 actual=actual.get(item_id, Decimal(0)), confirmed=confirmed.get(item_id, Decimal(0)),
                 unit=row["unit"], plan_unit=row["plan_unit"] or row["unit"],
                 building_id=row["building_id"], floor_id=row["floor_id"],
-                element=row["element"], work_type=row["work_type"], in_plan=row["line_id"] is not None)
+                element=row["element"], work_type=row["work_type"], in_plan=row["line_id"] is not None,
+                project_id=self.project_id)
             results.append(calculate_item(source))
         total = aggregate(results)
         return Snapshot(report_date, knowledge_cutoff, version_id, discipline, total.status,
@@ -78,8 +83,9 @@ class HistoricalCalculator:
     def _volumes(self, table, date_column, discipline, report_date, knowledge_cutoff):
         rows = self.db.execute(
             "SELECT e.work_item_id,e.quantity_delta FROM {} e JOIN work_items w ON w.id=e.work_item_id "
-            "WHERE w.discipline=? AND e.{}<=? AND e.recorded_at<=? ORDER BY e.id".format(table, date_column),
-            (discipline.value, report_date, knowledge_cutoff))
+            "JOIN buildings b ON b.id=w.building_id "
+            "WHERE w.discipline=? AND b.project_id=? AND e.{}<=? AND e.recorded_at<=? ORDER BY e.id".format(table, date_column),
+            (discipline.value, self.project_id, report_date, knowledge_cutoff))
         values = {}
         for row in rows:
             values.setdefault(row["work_item_id"], []).append(Decimal(row["quantity_delta"]))
@@ -108,5 +114,5 @@ class HistoricalCalculator:
             subtract(after.total.confirmed_earned_labor, before.total.confirmed_earned_labor) if valid else None)
 
 
-def calculate_as_of(report_date, knowledge_cutoff, plan_version_id, *, db):
-    return HistoricalCalculator(db).calculate_as_of(report_date, knowledge_cutoff, plan_version_id)
+def calculate_as_of(report_date, knowledge_cutoff, plan_version_id, *, db, project_id=1):
+    return HistoricalCalculator(db, project_id).calculate_as_of(report_date, knowledge_cutoff, plan_version_id)

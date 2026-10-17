@@ -8,8 +8,9 @@ from .work_repository import WorkRepository
 
 
 class EventRepository:
-    def __init__(self, db):
+    def __init__(self, db, project_id=1):
         self.db = db
+        self.project_id = project_id
 
     def add_fact(self, work_item_id, quantity_delta, work_date, *, event_key,
                  recorded_at=None, comment="", correction_of_id=None, unit=None):
@@ -28,7 +29,11 @@ class EventRepository:
         # Table/column names above are private constants, never caller SQL.
         quantity, business_date, recorded_at = canonical(quantity), day(business_date), instant(recorded_at)
         with transaction(self.db):
-            item = WorkRepository(self.db)._item(item_id)
+            work = WorkRepository(self.db, self.project_id)
+            work._writable()
+            item = work._item(item_id)
+            if correction_of_id is None and item["building_status"] != "active":
+                raise ValidationError("Корпус архивирован; доступны только корректировки истории")
             columns = "work_item_id,quantity_delta,{},{},recorded_at,correction_of_id,event_key,unit".format(
                 date_column, metadata_column)
             values = [item_id, quantity, business_date, metadata, recorded_at,
@@ -47,12 +52,13 @@ class EventRepository:
         table = "fact_events" if kind == "fact" else "confirmation_events"
         date_column = "work_date" if kind == "fact" else "confirmed_date"
         return self.db.execute(
-            "SELECT e.*,e.{} AS business_date,c.code,c.name,b.name AS building_name,f.floor_code,w.discipline "
+            "SELECT e.*,e.{} AS business_date,c.code,c.name,c.element,c.work_type,"
+            "b.name AS building_name,f.floor_code,w.discipline,w.building_id,w.floor_id "
             "FROM {} e JOIN work_items w ON w.id=e.work_item_id "
             "JOIN work_catalog c ON c.id=w.catalog_id JOIN buildings b ON b.id=w.building_id "
-            "JOIN floors f ON f.id=w.floor_id WHERE (? IS NULL OR e.work_item_id=?) "
+            "JOIN floors f ON f.id=w.floor_id WHERE b.project_id=? AND (? IS NULL OR e.work_item_id=?) "
             "ORDER BY e.recorded_at DESC,e.id DESC".format(date_column, table),
-            (work_item_id, work_item_id)).fetchall()
+            (self.project_id, work_item_id, work_item_id)).fetchall()
 
     def _validate_timeline(self, item_id):
         """Check every business-date / knowledge-time frontier with exact sums.

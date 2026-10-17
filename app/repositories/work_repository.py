@@ -7,22 +7,73 @@ from .base import ValidationError, transaction
 
 
 class WorkRepository:
-    def __init__(self, db):
+    def __init__(self, db, project_id=1):
         self.db = db
+        self.project_id = project_id
+
+    def _writable(self):
+        row = self.db.execute("SELECT status FROM projects WHERE id=?", (self.project_id,)).fetchone()
+        if row is None or row["status"] != "active":
+            raise ValidationError("Объект архивирован или не найден. Изменения запрещены")
+
+    def _building(self, building_id, *, writable=False):
+        row = self.db.execute("SELECT * FROM buildings WHERE id=? AND project_id=?",
+                              (building_id, self.project_id)).fetchone()
+        if row is None:
+            raise ValidationError("Корпус не принадлежит текущему объекту")
+        if writable:
+            self._writable()
+            if row["status"] != "active":
+                raise ValidationError("Корпус архивирован. Сначала восстановите его")
+        return row
+
+    def add_building(self, code, name, sort_order=0):
+        from .project_repository import clean
+        with transaction(self.db):
+            self._writable()
+            return self.db.execute("INSERT INTO buildings(project_id,code,name,sort_order) VALUES (?,?,?,?)",
+                                   (self.project_id, clean(code, "Код корпуса", 80),
+                                    clean(name, "Название корпуса"), sort_order)).lastrowid
+
+    def update_building(self, building_id, code, name, sort_order):
+        from .project_repository import clean
+        with transaction(self.db):
+            self._writable()
+            self._building(building_id)
+            self.db.execute("UPDATE buildings SET code=?,name=?,sort_order=? WHERE id=?",
+                            (clean(code, "Код корпуса", 80), clean(name, "Название корпуса"), sort_order, building_id))
+
+    def archive_building(self, building_id, archived=True):
+        with transaction(self.db):
+            self._writable()
+            self._building(building_id)
+            self.db.execute("UPDATE buildings SET status=? WHERE id=?", ("archived" if archived else "active", building_id))
+
+    def _floor(self, floor_id):
+        row = self.db.execute("SELECT f.* FROM floors f JOIN buildings b ON b.id=f.building_id "
+                              "WHERE f.id=? AND b.project_id=?", (floor_id, self.project_id)).fetchone()
+        if row is None:
+            raise ValidationError("Этаж не принадлежит текущему объекту")
+        return row
 
     def add_floor(self, building_id, floor_code, sort_order):
         with transaction(self.db):
+            self._building(building_id, writable=True)
             return self.db.execute(
                 "INSERT INTO floors(building_id,floor_code,sort_order) VALUES (?,?,?)",
                 (building_id, floor_code, sort_order)).lastrowid
 
     def reorder_floor(self, floor_id, sort_order):
         with transaction(self.db):
+            self._writable()
+            self._floor(floor_id)
             if self.db.execute("UPDATE floors SET sort_order=? WHERE id=?", (sort_order, floor_id)).rowcount != 1:
                 raise ValidationError("Этаж не найден")
 
     def delete_floor(self, floor_id):
         with transaction(self.db):
+            self._writable()
+            self._floor(floor_id)
             if self.db.execute("SELECT 1 FROM work_items WHERE floor_id=?", (floor_id,)).fetchone():
                 raise ValidationError("Этаж используется в учёте; удаление запрещено")
             if self.db.execute("DELETE FROM floors WHERE id=?", (floor_id,)).rowcount != 1:
@@ -39,14 +90,15 @@ class WorkRepository:
                 raise ValidationError("Код работы не найден")
 
     def list_buildings(self):
-        return self.db.execute("SELECT * FROM buildings ORDER BY id").fetchall()
+        return self.db.execute("SELECT * FROM buildings WHERE project_id=? ORDER BY sort_order,id",
+                               (self.project_id,)).fetchall()
 
     def list_floors(self, building_id=None):
         return self.db.execute(
             "SELECT f.*,b.name AS building_name,EXISTS(SELECT 1 FROM work_items w WHERE w.floor_id=f.id) AS used "
             "FROM floors f JOIN buildings b ON b.id=f.building_id "
-            "WHERE (? IS NULL OR f.building_id=?) ORDER BY b.id,f.sort_order,f.id",
-            (building_id, building_id)).fetchall()
+            "WHERE b.project_id=? AND (? IS NULL OR f.building_id=?) ORDER BY b.sort_order,b.id,f.sort_order,f.id",
+            (self.project_id, building_id, building_id)).fetchall()
 
     def list_catalog(self, *, search="", element="", work_type=""):
         rows = self.db.execute(
@@ -63,20 +115,21 @@ class WorkRepository:
             "SELECT w.*,c.code,c.name,c.unit,c.element,c.work_type,b.name AS building_name,f.floor_code "
             "FROM work_items w JOIN work_catalog c ON c.id=w.catalog_id "
             "JOIN buildings b ON b.id=w.building_id JOIN floors f ON f.id=w.floor_id "
-            "WHERE (? IS NULL OR w.discipline=?) AND (? IS NULL OR w.building_id=?) "
+            "WHERE b.project_id=? AND (? IS NULL OR w.discipline=?) AND (? IS NULL OR w.building_id=?) "
             "AND (? IS NULL OR w.floor_id=?) AND (?='' OR c.element=?) AND (?='' OR c.work_type=?) "
             "ORDER BY b.id,f.sort_order,f.id,c.code,w.id",
-            (discipline, discipline, building_id, building_id, floor_id, floor_id,
+            (self.project_id, discipline, discipline, building_id, building_id, floor_id, floor_id,
              element, element, work_type, work_type)).fetchall()
 
     def list_plan_versions(self, discipline):
-        return self.db.execute("SELECT * FROM plan_versions WHERE discipline=? ORDER BY version_no DESC",
-                               (Discipline(discipline).value,)).fetchall()
+        return self.db.execute("SELECT * FROM plan_versions WHERE project_id=? AND discipline=? ORDER BY version_no DESC",
+                               (self.project_id, Discipline(discipline).value)).fetchall()
 
     def get_plan_version(self, version_id):
         return self._version(version_id)
 
     def list_plan_lines(self, version_id):
+        self._version(version_id)
         return self.db.execute("SELECT * FROM plan_lines WHERE plan_version_id=? ORDER BY work_item_id",
                                (version_id,)).fetchall()
 
@@ -88,6 +141,8 @@ class WorkRepository:
 
     def add_work_item(self, building_id, floor_id, catalog_id, discipline=Discipline.CONSTRUCTION):
         with transaction(self.db):
+            self._building(building_id, writable=True)
+            self._floor(floor_id)
             return self.db.execute(
                 "INSERT INTO work_items(building_id,floor_id,catalog_id,discipline) VALUES (?,?,?,?)",
                 (building_id, floor_id, catalog_id, Discipline(discipline).value)).lastrowid
@@ -96,6 +151,7 @@ class WorkRepository:
         discipline = Discipline(discipline).value
         created = instant(created_at)
         with transaction(self.db):
+            self._writable()
             if base_version_id is not None:
                 base = self._version(base_version_id)
                 if base["discipline"] != discipline or base["status"] != "APPROVED":
@@ -103,11 +159,11 @@ class WorkRepository:
                 if created < base["approved_at"]:
                     raise ValidationError("A new version cannot predate its baseline")
             number = self.db.execute(
-                "SELECT COALESCE(MAX(version_no),0)+1 FROM plan_versions WHERE discipline=?",
-                (discipline,)).fetchone()[0]
+                "SELECT COALESCE(MAX(version_no),0)+1 FROM plan_versions WHERE project_id=? AND discipline=?",
+                (self.project_id, discipline)).fetchone()[0]
             version_id = self.db.execute(
-                "INSERT INTO plan_versions(discipline,version_no,created_at) VALUES (?,?,?)",
-                (discipline, number, created)).lastrowid
+                "INSERT INTO plan_versions(project_id,discipline,version_no,created_at) VALUES (?,?,?,?)",
+                (self.project_id, discipline, number, created)).lastrowid
             if base_version_id is not None:
                 self.db.execute(
                     "INSERT INTO plan_lines(plan_version_id,work_item_id,planned_quantity,labor_norm,unit) "
@@ -148,8 +204,8 @@ class WorkRepository:
 
     def get_active_plan_version(self, discipline, *, report_date=None, knowledge_cutoff=None):
         """Approval is both the effective date and the availability timestamp."""
-        params = [Discipline(discipline).value]
-        sql = "SELECT * FROM plan_versions WHERE discipline=? AND status='APPROVED'"
+        params = [self.project_id, Discipline(discipline).value]
+        sql = "SELECT * FROM plan_versions WHERE project_id=? AND discipline=? AND status='APPROVED'"
         if report_date is not None:
             sql += " AND approved_at<=?"
             params.append(end_of_day(report_date))
@@ -187,12 +243,13 @@ class WorkRepository:
         return changes
 
     def _version(self, version_id):
-        row = self.db.execute("SELECT * FROM plan_versions WHERE id=?", (version_id,)).fetchone()
+        row = self.db.execute("SELECT * FROM plan_versions WHERE id=? AND project_id=?", (version_id, self.project_id)).fetchone()
         if row is None:
             raise ValidationError("Plan version does not exist")
         return row
 
     def _draft(self, version_id):
+        self._writable()
         row = self._version(version_id)
         if row["status"] != "DRAFT":
             raise ValidationError("Approved plan is immutable; create a new version")
@@ -200,8 +257,26 @@ class WorkRepository:
 
     def _item(self, item_id):
         row = self.db.execute(
-            "SELECT w.*,c.unit FROM work_items w JOIN work_catalog c ON c.id=w.catalog_id WHERE w.id=?",
-            (item_id,)).fetchone()
+            "SELECT w.*,c.unit,b.project_id,b.status AS building_status FROM work_items w "
+            "JOIN work_catalog c ON c.id=w.catalog_id JOIN buildings b ON b.id=w.building_id "
+            "WHERE w.id=? AND b.project_id=?", (item_id, self.project_id)).fetchone()
         if row is None:
             raise ValidationError("Work item does not exist")
         return row
+
+    def remove_plan_line(self, version_id, item_id):
+        with transaction(self.db):
+            self._draft(version_id)
+            self._item(item_id)
+            if self.db.execute("DELETE FROM plan_lines WHERE plan_version_id=? AND work_item_id=?",
+                               (version_id, item_id)).rowcount != 1:
+                raise ValidationError("Позиция отсутствует в версии")
+
+    def available_work_items(self, discipline, **filters):
+        """Current approved baseline only; drafts and removed lines never leak in."""
+        version = self.get_active_plan_version(discipline, report_date=instant()[:10], knowledge_cutoff=instant())
+        if version is None:
+            return []
+        ids = {row["work_item_id"] for row in self.list_plan_lines(version["id"])}
+        return [row for row in self.list_work_items(discipline=Discipline(discipline).value, **filters)
+                if row["id"] in ids and self._building(row["building_id"])["status"] == "active"]

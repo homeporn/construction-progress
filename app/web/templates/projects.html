@@ -1,0 +1,13 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import csrf with context %}
+{% block title %}Объекты{% endblock %}
+{% block heading %}Объекты{% endblock %}
+{% block subtitle %}Независимые рабочие пространства, планы и история выполнения{% endblock %}
+{% block heading_action %}<a class="button" href="{{ url_for('projects.create') }}">Создать объект</a>{% endblock %}
+{% block content %}
+<section class="panel"><div class="table-scroll"><table><thead><tr><th>Код</th><th>Наименование</th><th>Описание</th><th>Статус</th><th>Действия</th></tr></thead><tbody>
+{% for p in projects %}<tr><td class="code">{{ p.code }}</td><td><strong>{{ p.name }}</strong></td><td>{{ p.description or '—' }}</td><td><span class="badge">{{ 'Активный' if p.status=='active' else 'В архиве' }}</span></td><td>
+{% if p.id==current_project.id %}<a class="button secondary small" href="{{ url_for('projects.detail',project_id=p.id) }}">Открыть объект</a>{% else %}<form method="post" action="{{ url_for('projects.select') }}">{{ csrf() }}<input type="hidden" name="project_id" value="{{ p.id }}"><button class="small secondary" type="submit">Выбрать объект</button></form>{% endif %}
+</td></tr>{% endfor %}</tbody></table></div></section>
+<p class="help">Архивирование сохраняет корпуса, планы и события. Архивные объекты можно выбрать для просмотра и восстановить на странице объекта.</p>
+{% endblock %}

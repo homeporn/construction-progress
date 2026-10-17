@@ -48,13 +48,14 @@ def test_upgrade_preserves_existing_stage1_data_and_adds_comment(tmp_path, monke
     with monkeypatch.context() as patch:
         patch.setattr(database, "PROJECT_ROOT", old_root)
         db = database.initialize(path)
-        repo = WorkRepository(db)
-        floor = repo.add_floor(1, "1", 1)
-        item = repo.add_work_item(1, floor, 1)
-        version = repo.create_plan_version("CONSTRUCTION", created_at="2026-01-01T00:00:00Z")
-        repo.add_plan_line(version, item, "1000", "0.8")
-        repo.approve_plan_version(version, approved_at="2026-01-01T01:00:00Z")
-        EventRepository(db).add_fact(item, "600", "2026-01-10", event_key="legacy-f", recorded_at="2026-01-10T12:00:00Z")
+        # Populate the historical schema directly: today's repositories require
+        # object ownership, which intentionally does not exist in stage 1.
+        floor = db.execute("INSERT INTO floors(building_id,floor_code,sort_order) VALUES (1,'1',1)").lastrowid
+        item = db.execute("INSERT INTO work_items(building_id,floor_id,catalog_id,discipline) VALUES (1,?,1,'CONSTRUCTION')", (floor,)).lastrowid
+        version = db.execute("INSERT INTO plan_versions(discipline,version_no,created_at) VALUES ('CONSTRUCTION',1,'2026-01-01T00:00:00.000000Z')").lastrowid
+        db.execute("INSERT INTO plan_lines(plan_version_id,work_item_id,planned_quantity,labor_norm,unit) VALUES (?,?,'1000','0.8','м²')", (version,item))
+        db.execute("UPDATE plan_versions SET status='APPROVED',approved_at='2026-01-01T01:00:00.000000Z' WHERE id=?", (version,))
+        db.execute("INSERT INTO fact_events(work_item_id,quantity_delta,work_date,recorded_at,event_key,unit) VALUES (?,'600','2026-01-10','2026-01-10T12:00:00.000000Z','legacy-f','м²')", (item,))
         db.execute("INSERT INTO confirmation_events(work_item_id,quantity_delta,confirmed_date,recorded_at,document_ref,event_key,unit) "
                    "VALUES (?,'450','2026-01-10','2026-01-11T12:00:00.000000Z','old-document','legacy-c','м²')", (item,))
         before = [tuple(r) for r in db.execute("SELECT * FROM plan_lines")]
@@ -64,7 +65,7 @@ def test_upgrade_preserves_existing_stage1_data_and_adds_comment(tmp_path, monke
     try:
         assert [tuple(r) for r in db.execute("SELECT * FROM plan_lines")] == before
         assert db.execute("SELECT comment FROM confirmation_events").fetchone()[0] == ""
-        assert db.execute("SELECT count(*) FROM schema_migrations").fetchone()[0] == 3
+        assert db.execute("SELECT count(*) FROM schema_migrations").fetchone()[0] == len(list((PROJECT_ROOT / 'migrations').glob('*.sql')))
         assert db.execute("PRAGMA foreign_key_check").fetchall() == []
         assert HistoricalCalculator(db).calculate_as_of("2026-01-31", "2026-01-31T12:00:00Z", version).total.confirmed_progress == Decimal("0.45")
         EventRepository(db).add_confirmation(item, "1", "2026-01-12", event_key="new-c", document_ref="new-doc",

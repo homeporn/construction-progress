@@ -1,4 +1,4 @@
-{% macro csrf() %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}">{% endmacro %}
+{% macro csrf() %}<input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="workspace_id" value="{{ current_project.id }}">{% endmacro %}
 {% macro badge(status) %}<span class="badge {{ status.value if status.value is defined else status }}">{{ status_labels[status] }}</span>{% endmacro %}
 {% macro meter(value) %}{% if value is not none %}<progress value="{{ value }}" max="1" aria-label="Готовность {{ value|percent }}"></progress>{% else %}<div class="empty-meter"></div>{% endif %}{% endmacro %}
 {% macro dates(report_date, cutoff) %}

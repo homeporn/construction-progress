@@ -11,9 +11,12 @@ CATALOG = {
 def seed_catalog(db):
     db.execute("BEGIN IMMEDIATE")
     try:
-        for code, name in [("A", "Корпус А"), ("B", "Корпус B"), ("C", "Корпус C")]:
-            if not db.execute("SELECT 1 FROM buildings WHERE code=?", (code,)).fetchone():
-                db.execute("INSERT INTO buildings(code,name) VALUES (?,?)", (code, name))
+        # Existing installations with older migrations remain seedable. Modern
+        # installations seed buildings once in 004, never on every application start.
+        if not db.execute("SELECT 1 FROM sqlite_master WHERE name='projects'").fetchone():
+            for code, name in [("A", "Корпус А"), ("B", "Корпус B"), ("C", "Корпус C")]:
+                if not db.execute("SELECT 1 FROM buildings WHERE code=?", (code,)).fetchone():
+                    db.execute("INSERT INTO buildings(code,name) VALUES (?,?)", (code, name))
         for prefix, (element, names) in CATALOG.items():
             for number, name in enumerate(names, 1):
                 code = "ОТД.{}.{:02d}".format(prefix, number)
