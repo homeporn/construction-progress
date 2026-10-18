@@ -4,6 +4,7 @@ from app.decimal_utils import canonical, multiply, subtract
 from app.models import Discipline
 from app.time_utils import end_of_day, instant
 from .base import ValidationError, transaction
+from .building_dependencies import building_dependencies
 
 
 class WorkRepository:
@@ -49,6 +50,25 @@ class WorkRepository:
             self._building(building_id)
             self.db.execute("UPDATE buildings SET status=? WHERE id=?", ("archived" if archived else "active", building_id))
 
+    def building_deletion_info(self, building_id):
+        building = self._building(building_id)
+        floors = self.list_floors(building_id)
+        dependencies = building_dependencies(self.db, building_id)
+        return dict(building=building, floors=floors, dependencies=dependencies, can_delete=not dependencies)
+
+    def delete_building(self, building_id, *, delete_empty_floors=False):
+        """Recheck all references under the write lock; never cascade records."""
+        with transaction(self.db):
+            self._writable()
+            info = self.building_deletion_info(building_id)
+            if not info["can_delete"]:
+                raise ValidationError("Корпус содержит учётные или связанные данные. Используйте архивирование")
+            if info["floors"] and not delete_empty_floors:
+                raise ValidationError("Подтвердите удаление пустых этажей вместе с корпусом")
+            # Explicit deletion only after checking that every floor is empty.
+            self.db.execute("DELETE FROM floors WHERE building_id=?", (building_id,))
+            self.db.execute("DELETE FROM buildings WHERE id=? AND project_id=?", (building_id, self.project_id))
+
     def _floor(self, floor_id):
         row = self.db.execute("SELECT f.* FROM floors f JOIN buildings b ON b.id=f.building_id "
                               "WHERE f.id=? AND b.project_id=?", (floor_id, self.project_id)).fetchone()
@@ -89,16 +109,18 @@ class WorkRepository:
             if cursor.rowcount != 1:
                 raise ValidationError("Код работы не найден")
 
-    def list_buildings(self):
-        return self.db.execute("SELECT * FROM buildings WHERE project_id=? ORDER BY sort_order,id",
-                               (self.project_id,)).fetchall()
+    def list_buildings(self, *, include_archived=True):
+        """Reports include the archive; new-entry forms request active rows."""
+        return self.db.execute("SELECT * FROM buildings WHERE project_id=? AND (? OR status='active') ORDER BY sort_order,id",
+                               (self.project_id, include_archived)).fetchall()
 
-    def list_floors(self, building_id=None):
+    def list_floors(self, building_id=None, *, include_archived=True):
         return self.db.execute(
             "SELECT f.*,b.name AS building_name,EXISTS(SELECT 1 FROM work_items w WHERE w.floor_id=f.id) AS used "
             "FROM floors f JOIN buildings b ON b.id=f.building_id "
-            "WHERE b.project_id=? AND (? IS NULL OR f.building_id=?) ORDER BY b.sort_order,b.id,f.sort_order,f.id",
-            (self.project_id, building_id, building_id)).fetchall()
+            "WHERE b.project_id=? AND (? IS NULL OR f.building_id=?) AND (? OR b.status='active') "
+            "ORDER BY b.sort_order,b.id,f.sort_order,f.id",
+            (self.project_id, building_id, building_id, include_archived)).fetchall()
 
     def list_catalog(self, *, search="", element="", work_type=""):
         rows = self.db.execute(

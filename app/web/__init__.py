@@ -121,7 +121,7 @@ def create_app(config=None):
     @app.errorhandler(ValueError)
     def validation_error(error):
         message = str(error) if isinstance(error, InputError) else translate_error(str(error))
-        endpoint = {"projects": "projects.index", "buildings": "buildings.index", "catalog": "catalog.index", "volumes": "volumes.index",
+        endpoint = {"projects": "projects.index", "personnel": "personnel.index", "work_orders": "work_orders.index", "buildings": "buildings.index", "catalog": "catalog.index", "volumes": "volumes.index",
                     "events": "events.confirmations" if request.path == "/confirmations" else "events.facts",
                     "progress": "progress.index"}.get(request.blueprint, "dashboard.index")
         return render_template("error.html", message=message, back_url=url_for(endpoint)), 400
@@ -139,8 +139,8 @@ def create_app(config=None):
             code, message = 500, "Не удалось выполнить операцию. Данные не сохранены. Проверьте доступность базы и повторите запрос."
         return render_template("error.html", message=message, back_url="/"), code
 
-    from .routes import dashboard, buildings, catalog, volumes, events, progress, projects
-    for module in (dashboard, buildings, catalog, volumes, events, progress, projects):
+    from .routes import dashboard, buildings, catalog, volumes, events, progress, projects, personnel, work_orders
+    for module in (dashboard, buildings, catalog, volumes, events, progress, projects, personnel, work_orders):
         app.register_blueprint(module.bp)
 
     @app.post("/shutdown")

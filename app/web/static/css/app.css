@@ -20,3 +20,21 @@ button,.button{display:inline-flex;align-items:center;justify-content:center;gap
 .workspace { margin-top: 20px; margin-bottom: 14px; padding-bottom: 14px; }
 .nav-link { padding-top: 9px; padding-bottom: 9px; }
 @media(max-width:640px) { .workspace { display: flex; margin: 14px 8px; } }
+.delete-building-form { display: grid; gap: 16px; max-width: 700px; }
+.delete-building-form .confirmation-option { display: flex; flex-direction: row; align-items: flex-start; gap: 10px; }
+.confirmation-option input[type="checkbox"] { width: auto; min-height: 0; margin-top: 4px; }
+.delete-building-form button { justify-self: start; }
+.document-actions { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+.document-actions .help { margin: 0; }
+.document-header p { line-height: 1.8; }
+.document-section { margin: 22px 0 12px; }
+.crew-warning { color: var(--amber); }
+.order-lines table { min-width: 900px; }
+.order-lines label { margin-bottom: 8px; }
+.order-lines th:nth-child(1) { width: 22%; }
+.order-lines th:nth-child(2) { width: 32%; }
+.order-lines input { min-width: 90px; }
+.assignment-table { min-width: 950px; }
+.handwrite { min-width: 50px; }
+#order-crew select[multiple] { min-width: 220px; }
+#order-crew input[type="number"] { min-width: 70px; }

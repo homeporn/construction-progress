@@ -9,7 +9,8 @@ bp = Blueprint("buildings", __name__)
 @bp.get("/buildings")
 def index():
     repo = WorkRepository(get_db(), current_project_id())
-    return render_template("buildings.html", buildings=repo.list_buildings(), floors=repo.list_floors())
+    return render_template("buildings.html", buildings=repo.list_buildings(), floors=repo.list_floors(),
+                           entry_buildings=repo.list_buildings(include_archived=False))
 
 
 @bp.get("/api/buildings")

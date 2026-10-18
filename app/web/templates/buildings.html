@@ -5,16 +5,17 @@
 {% block subtitle %}Независимая структура каждого корпуса, включая подземные и технические этажи{% endblock %}
 {% block content %}
 <section class="panel"><h2>Добавление этажа</h2><form method="post" action="{{ url_for('buildings.change_floor') }}" class="inline-form">{{ csrf() }}<input type="hidden" name="action" value="add">
-  <label>Корпус<select aria-label="Корпус" name="building_id" required>{% for building in buildings %}<option value="{{ building.id }}">{{ building.name }}</option>{% endfor %}</select></label>
+  <label>Корпус<select aria-label="Корпус" name="building_id" required>{% for building in entry_buildings %}<option value="{{ building.id }}">{{ building.name }}</option>{% endfor %}</select></label>
   <label>Обозначение<input name="floor_code" placeholder="−2, 1, Тех, Кровля" maxlength="40" required></label>
   <label>Порядок отображения<input name="sort_order" type="number" step="1" value="1" min="-999999999" max="999999999" required></label><button type="submit">Добавить этаж</button>
 </form></section>
 <section class="building-grid floors-grid">
-{% for building in buildings %}<article class="panel"><div class="panel-heading"><h2>{{ building.name }}</h2><span class="badge">{{ floors|selectattr('building_id','equalto',building.id)|list|length }} этажей</span></div>
+{% for building in buildings %}<article class="panel"><div class="panel-heading"><h2>{{ building.name }}{% if building.status=='archived' %} <span class="badge">В архиве</span>{% endif %}</h2><span class="badge">{{ floors|selectattr('building_id','equalto',building.id)|list|length }} этажей</span></div>
   <div class="table-scroll"><table><thead><tr><th>Этаж</th><th>Порядок</th><th>Действия</th></tr></thead><tbody>
   {% for floor in floors if floor.building_id==building.id %}<tr><td><strong>{{ floor.floor_code }}</strong>{% if floor.used %}<small class="muted">Используется</small>{% endif %}</td><td><form method="post" action="{{ url_for('buildings.change_floor') }}" class="order-form">{{ csrf() }}<input type="hidden" name="action" value="reorder"><input type="hidden" name="floor_id" value="{{ floor.id }}"><input name="sort_order" aria-label="Порядок этажа {{ floor.floor_code }}" type="number" value="{{ floor.sort_order }}" min="-999999999" max="999999999" required><button class="small secondary" type="submit">Сохранить</button></form></td><td>{% if not floor.used %}<form method="post" action="{{ url_for('buildings.change_floor') }}" data-confirm="Удалить этаж {{ floor.floor_code }}?">{{ csrf() }}<input type="hidden" name="action" value="delete"><input type="hidden" name="floor_id" value="{{ floor.id }}"><button type="submit" class="button-quiet danger-text">Удалить</button></form>{% else %}<span class="muted">Защищён</span>{% endif %}</td></tr>
   {% else %}<tr><td colspan="3" class="empty-cell">Этажи ещё не добавлены</td></tr>{% endfor %}
   </tbody></table></div>
 </article>{% endfor %}</section>
 <p class="help">Меньшее значение порядка отображается выше. Обозначение этажа не определяет его порядок. Удаление возможно только при отсутствии учётных позиций.</p>
+<p><a href="{{ url_for('projects.detail',project_id=current_project.id) }}">Управление корпусами: удаление, архивирование и восстановление →</a></p>
 {% endblock %}

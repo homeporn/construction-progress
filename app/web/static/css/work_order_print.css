@@ -1,0 +1,38 @@
+@page { size: A4 landscape; margin: 10mm; }
+* { box-sizing: border-box; }
+body { font: 10pt Arial, sans-serif; color: #111; background: #eee; margin: 0; }
+.print-toolbar { display: flex; gap: 20px; align-items: center; padding: 15px 25px; background: white; border-bottom: 1px solid #ccc; }
+.print-toolbar a { color: #234a9c; }
+.print-toolbar button { padding: 8px 12px; cursor: pointer; }
+.print-document { margin: 20px auto; padding: 12mm; background: white; max-width: 297mm; }
+h2 { font-size: 15pt; margin: 0 0 12px; }
+h3 { font-size: 11pt; margin: 18px 0 8px; }
+p { line-height: 1.5; margin: 8px 0; white-space: pre-wrap; }
+table { border-collapse: collapse; width: 100%; table-layout: fixed; font-size: 9pt; }
+th, td { border: 1px solid #555; padding: 6px 4px; vertical-align: top; overflow-wrap: break-word; }
+th { text-align: left; background: #eee; }
+.assignment-table th:first-child { width: 3%; }
+.assignment-table th:nth-child(3) { width: 5%; }
+.assignment-table th:nth-child(5) { width: 16%; }
+.assignment-table th:nth-child(6) { width: 5%; }
+small { display: block; font-size: 8pt; }
+.numeric { text-align: right; }
+.handwrite { min-width: 35px; height: 45px; }
+.signatures { display: grid; grid-template-columns: 1fr 1fr; gap: 15px 30px; margin-top: 25px; }
+.signatures div, .internal-approvals { break-inside: avoid; page-break-inside: avoid; }
+.signatures p { margin: 12px 0; }
+.internal-approvals { border-top: 1px solid #aaa; margin-top: 18px; padding-top: 10px; font-size: 8pt; }
+.help, .crew-warning { font-size: 8pt; }
+.danger-text { font-weight: bold; }
+@media print {
+  body { background: white; font-size: 9pt; }
+  .print-toolbar { display: none !important; }
+  .print-document { margin: 0; padding: 0; width: auto; max-width: none; }
+  thead { display: table-header-group; }
+  tr { break-inside: avoid; page-break-inside: avoid; }
+  .document-table { overflow: visible; max-height: none; }
+  .signatures { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; margin-top: 16px; font-size: 8pt; }
+  .signatures p { margin: 8px 0; }
+  .internal-approvals { margin-top: 12px; padding-top: 8px; }
+}
+@media screen and (max-width: 800px) { .print-document { margin: 10px; padding: 15px; overflow-x: auto; } .assignment-table { min-width: 900px; } .print-toolbar { flex-wrap: wrap; } }

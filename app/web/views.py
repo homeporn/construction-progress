@@ -13,6 +13,9 @@ def work_context(*, historical=False):
     direction, filters = discipline(request.args), item_filters(request.args)
     report_date, cutoff = report_dates(request.args)
     floors, buildings, catalog = repo.list_floors(), repo.list_buildings(), repo.list_catalog()
+    entry_buildings = [b for b in buildings if b["status"] == "active"]
+    active_ids = {b["id"] for b in entry_buildings}
+    entry_floors = [f for f in floors if f["building_id"] in active_ids]
     if filters["building_id"] and filters["building_id"] not in {b["id"] for b in buildings}:
         raise InputError("Выбранный корпус не найден.")
     if filters["floor_id"] and not any(f["id"] == filters["floor_id"] and
@@ -35,6 +38,7 @@ def work_context(*, historical=False):
     total = (service.group(report_items) if report and report.items else
              report.total if report and report.total else GroupProgress(status=Status.INVALID if report else Status.NO_DATA))
     return dict(discipline=direction, filters=filters, buildings=buildings, floors=floors,
+                entry_buildings=entry_buildings, entry_floors=entry_floors,
                 catalog=catalog, elements=sorted({c["element"] for c in catalog}),
                 work_types=sorted({c["work_type"] for c in catalog}), versions=versions,
                 version=version, report_date=report_date, cutoff=cutoff, report=report,

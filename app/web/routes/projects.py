@@ -1,6 +1,7 @@
 from flask import Blueprint, abort, flash, redirect, render_template, request, session, url_for
 
 from app.repositories.project_repository import ProjectRepository
+from app.repositories.base import ValidationError
 from app.repositories.work_repository import WorkRepository
 from app.web import current_project_id, get_db
 from app.web.forms import InputError, integer, text
@@ -80,3 +81,25 @@ def buildings(project_id):
         raise InputError("Неизвестная операция с корпусом.")
     flash("Корпус сохранён.", "success")
     return redirect(url_for("projects.detail", project_id=project_id), code=303)
+
+
+@bp.route("/projects/<int:project_id>/buildings/<int:building_id>/delete", methods=["GET", "POST"])
+def delete_building(project_id, building_id):
+    if project_id != current_project_id():
+        abort(403)
+    repo = WorkRepository(get_db(), project_id)
+    info = repo.building_deletion_info(building_id)
+    error = None
+    if request.method == "POST":
+        try:
+            if request.form.get("confirm_delete") != "1":
+                raise InputError("Подтвердите удаление корпуса.")
+            repo.delete_building(building_id, delete_empty_floors=request.form.get("delete_empty_floors") == "1")
+        except ValidationError as exc:
+            error = str(exc)
+            info = repo.building_deletion_info(building_id)
+        else:
+            flash("Корпус и его пустые этажи удалены. Журнал аудита сохранён.", "success")
+            return redirect(url_for("projects.detail", project_id=project_id), code=303)
+    return render_template("building_delete.html", project=ProjectRepository(get_db()).get_project(project_id),
+                           error=error, **info), 400 if error else 200

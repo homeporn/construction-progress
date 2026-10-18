@@ -1,0 +1,27 @@
+{% extends 'base.html' %}
+{% from '_macros.html' import csrf with context %}
+{% block title %}Удаление корпуса{% endblock %}
+{% block heading %}Удаление корпуса{% endblock %}
+{% block subtitle %}{{ project.name }} · {{ building.code }} · {{ building.name }}{% endblock %}
+{% block content %}
+<section class="panel">
+{% if error %}<p class="danger-text" role="alert">{{ error }}</p>{% endif %}
+{% if project.status != 'active' %}<p>Объект архивирован. Для изменений сначала восстановите объект.</p>
+{% elif not can_delete %}
+<h2>Удаление невозможно</h2><p>У корпуса есть связанные данные. Они защищены от удаления вместе с корпусом.</p>
+<ul>{% for dependency in dependencies %}<li>{{ dependency.label }}: {{ dependency.count }}</li>{% endfor %}</ul>
+<p>Архивирование сохранит этажи, планы, выполнение и исторические отчёты. Корпус исчезнет из форм новых работ.</p>
+{% if building.status == 'active' %}<form method="post" action="{{ url_for('projects.buildings',project_id=project.id) }}">{{ csrf() }}<input type="hidden" name="building_id" value="{{ building.id }}"><input type="hidden" name="action" value="archive"><button type="submit" class="secondary">Архивировать корпус</button></form>
+{% else %}<p>Корпус уже архивирован. Его можно восстановить в настройках объекта.</p>{% endif %}
+{% else %}
+<h2>Подтверждение удаления</h2><p>Корпус будет удалён без возможности восстановления через интерфейс. Учётных и связанных данных не найдено.</p>
+{% if floors %}<p>Пустые этажи ({{ floors|length }}): {% for floor in floors %}{{ floor.floor_code }}{{ ', ' if not loop.last else '' }}{% endfor %}.</p>{% endif %}
+<form method="post" class="delete-building-form">{{ csrf() }}
+<label class="confirmation-option"><input type="checkbox" name="confirm_delete" value="1" required> Подтверждаю удаление корпуса «{{ building.name }}»</label>
+{% if floors %}<label class="confirmation-option"><input type="checkbox" name="delete_empty_floors" value="1" required> Удалить также все перечисленные пустые этажи</label>{% endif %}
+<p class="help">Перед сохранением сервер повторно проверит зависимости. История аудита операции останется в базе.</p>
+<button type="submit" class="secondary danger-text">Удалить корпус</button></form>
+{% endif %}
+<p><a href="{{ url_for('projects.detail',project_id=project.id) }}">Вернуться к объекту</a></p>
+</section>
+{% endblock %}

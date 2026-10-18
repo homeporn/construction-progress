@@ -71,6 +71,9 @@ def migrate(db):
     elif existing and upgraded and (PROJECT_ROOT / "migrations/005_event_sources.sql").exists() and not db.execute(
             "SELECT 1 FROM schema_migrations WHERE name='005_event_sources.sql'").fetchone():
         backup_database(db, label="event-flow")
+    elif existing and markers and (PROJECT_ROOT / "migrations/006_work_orders.sql").exists() and not db.execute(
+            "SELECT 1 FROM schema_migrations WHERE name='006_work_orders.sql'").fetchone():
+        backup_database(db, label="work-orders")
     db.execute("CREATE TABLE IF NOT EXISTS schema_migrations "
                "(name TEXT PRIMARY KEY, applied_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)")
     for path in sorted((PROJECT_ROOT / "migrations").glob("*.sql")):
@@ -90,7 +93,8 @@ def migrate(db):
             if db.execute("SELECT 1 FROM schema_migrations WHERE name=?", (path.name,)).fetchone():
                 db.commit()
                 continue
-            preserved = _fingerprints(db) if rebuild else None
+            preserve_existing = rebuild or path.name == "006_work_orders.sql"
+            preserved = _fingerprints(db) if preserve_existing else None
             # Execute complete SQL statements without executescript's implicit COMMIT.
             statement = ""
             for line in path.read_text(encoding="utf-8").splitlines(True):
@@ -100,13 +104,13 @@ def migrate(db):
                     statement = ""
             if statement.strip():
                 raise RuntimeError("Incomplete migration: " + path.name)
-            if rebuild:
+            if preserve_existing:
                 if _fingerprints(db, preserved[0])[1] != preserved[1]:
                     raise RuntimeError("Миграция изменила существующие данные; обновление отменено")
                 if db.execute("PRAGMA foreign_key_check").fetchall() or db.execute("PRAGMA integrity_check").fetchone()[0] != "ok":
                     raise RuntimeError("Миграция нарушила целостность базы; обновление отменено")
                 # Only a new empty installation receives the traditional buildings.
-                if preserved[1]["buildings"][0] == 0:
+                if rebuild and preserved[1]["buildings"][0] == 0:
                     db.executemany("INSERT INTO buildings(project_id,code,name,sort_order) VALUES (1,?,?,?)",
                                    [("A", "Корпус А", 1), ("B", "Корпус B", 2), ("C", "Корпус C", 3)])
             db.execute("INSERT INTO schema_migrations(name) VALUES (?)", (path.name,))
