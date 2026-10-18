@@ -53,7 +53,7 @@ def test_migration_backup_preserves_all_ids_events_and_progress_and_is_repeatabl
     database.migrate(db)
     assert database._fingerprints(db, columns)[1] == before
     assert len(list((root / 'backups').glob('before-work-orders-*.sqlite3'))) == 1
-    assert db.execute('SELECT count(*) FROM schema_migrations').fetchone()[0] == 6
+    assert db.execute('SELECT count(*) FROM schema_migrations').fetchone()[0] == len(list((PROJECT_ROOT / 'migrations').glob('*.sql')))
 
 
 def test_failed_migration_rolls_back_schema_and_keeps_backup(old_database, tmp_path, monkeypatch):

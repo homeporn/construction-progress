@@ -8,4 +8,4 @@
 <label>Дата среза<input type="date" name="report_date" value="{{ report_date }}" required></label>
 <label class="wide-field">Отсечение знаний<input name="knowledge_cutoff" value="{{ request.args.get('knowledge_cutoff','') }}" placeholder="Текущий момент, либо время ISO с часовым поясом" maxlength="40"></label>
 <input type="hidden" name="tab" value="{{ tab }}">{% if correction_mode %}<input type="hidden" name="correction" value="1">{% endif %}
-<div class="filter-actions"><button class="secondary" type="submit">Показать</button><a href="{{ url_for(request.endpoint,discipline=discipline.value) }}">Сбросить</a></div></div></form>
+<div class="filter-actions"><button class="secondary" type="submit">Показать</button><a href="{{ url_for(journal_endpoint,discipline=discipline.value) }}">Сбросить</a></div></div></form>

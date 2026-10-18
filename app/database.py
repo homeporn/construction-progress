@@ -51,8 +51,10 @@ def _fingerprints(db, columns=None):
     result = {}
     for table, names in columns.items():
         digest, count = hashlib.sha256(), 0
-        fields = ",".join('"{}"'.format(name) for name in names)
-        for row in db.execute('SELECT {} FROM "{}" ORDER BY id'.format(fields, table)):
+        quote = lambda name: '"' + name.replace('"', '""') + '"'
+        fields = ",".join(quote(name) for name in names)
+        order = quote('id' if 'id' in names else names[0])
+        for row in db.execute('SELECT {} FROM {} ORDER BY {}'.format(fields, quote(table), order)):
             digest.update(json.dumps(tuple(row), ensure_ascii=False).encode("utf-8"))
             count += 1
         result[table] = (count, digest.hexdigest())
@@ -74,6 +76,9 @@ def migrate(db):
     elif existing and markers and (PROJECT_ROOT / "migrations/006_work_orders.sql").exists() and not db.execute(
             "SELECT 1 FROM schema_migrations WHERE name='006_work_orders.sql'").fetchone():
         backup_database(db, label="work-orders")
+    elif existing and markers and (PROJECT_ROOT / "migrations/007_work_order_events.sql").exists() and not db.execute(
+            "SELECT 1 FROM schema_migrations WHERE name='007_work_order_events.sql'").fetchone():
+        backup_database(db, label="work-order-events")
     db.execute("CREATE TABLE IF NOT EXISTS schema_migrations "
                "(name TEXT PRIMARY KEY, applied_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)")
     for path in sorted((PROJECT_ROOT / "migrations").glob("*.sql")):
@@ -93,8 +98,13 @@ def migrate(db):
             if db.execute("SELECT 1 FROM schema_migrations WHERE name=?", (path.name,)).fetchone():
                 db.commit()
                 continue
-            preserve_existing = rebuild or path.name == "006_work_orders.sql"
-            preserved = _fingerprints(db) if preserve_existing else None
+            preserve_existing = rebuild or path.name in ("006_work_orders.sql", "007_work_order_events.sql")
+            original_columns = None
+            if path.name == "007_work_order_events.sql":
+                original_columns = {row[0]: [c[1] for c in db.execute('PRAGMA table_info("{}")'.format(row[0].replace('"', '""')))]
+                                    for row in db.execute("SELECT name FROM sqlite_master WHERE type='table' "
+                                                          "AND name NOT LIKE 'sqlite_%' AND name!='schema_migrations'")}
+            preserved = _fingerprints(db, original_columns) if preserve_existing else None
             # Execute complete SQL statements without executescript's implicit COMMIT.
             statement = ""
             for line in path.read_text(encoding="utf-8").splitlines(True):

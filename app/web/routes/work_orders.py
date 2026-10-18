@@ -1,14 +1,16 @@
 import re
+import secrets
 from uuid import uuid4
 
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 
 from app.repositories.base import ValidationError
 from app.repositories.work_order_repository import WorkOrderRepository
+from app.repositories.work_order_workflow_repository import WorkOrderWorkflowRepository
 from app.time_utils import instant
 from app.work_order_models import STATUS_LABELS
 from app.web import current_project_id, get_db
-from app.web.forms import InputError, business_date, integer, quantity, text
+from app.web.forms import InputError, business_date, integer, quantity, text, report_dates
 
 bp = Blueprint('work_orders', __name__)
 
@@ -106,7 +108,12 @@ def edit(order_id=None):
 
 @bp.get('/work-orders/<int:order_id>')
 def detail(order_id):
-    return render_template('work_order_detail.html', order=repository().get_order(order_id), order_statuses=STATUS_LABELS)
+    repo = repository()
+    report_date, cutoff = report_dates(request.args)
+    return render_template('work_order_detail.html', order=repo.get_order(order_id, report_date=report_date,
+                           knowledge_cutoff=cutoff if request.args.get('knowledge_cutoff') else None), order_statuses=STATUS_LABELS,
+                           employees=repo.people.list_employees(active_only=True),
+                           workflow_keys={a: secrets.token_urlsafe(24) for a in ('submitted','accepted','closed')})
 
 
 @bp.post('/work-orders/<int:order_id>/issue')
@@ -125,4 +132,35 @@ def cancel(order_id):
 
 @bp.get('/work-orders/<int:order_id>/print')
 def printing(order_id):
-    return render_template('work_order_print.html', order=repository().get_order(order_id), order_statuses=STATUS_LABELS)
+    report_date, cutoff = report_dates(request.args)
+    return render_template('work_order_print.html', order=repository().get_order(order_id, report_date=report_date,
+                           knowledge_cutoff=cutoff if request.args.get('knowledge_cutoff') else None), order_statuses=STATUS_LABELS)
+
+
+@bp.post('/work-orders/<int:order_id>/workflow/<action>')
+def workflow(order_id, action):
+    checks = {}
+    for value in request.form.getlist('review_line_id'):
+        line_id = integer(dict(id=value), 'id', 'Строка наряда')
+        if line_id in checks:
+            raise InputError('Строка проверки повторяется')
+        checks[line_id] = dict(checked=request.form.get('checked_' + str(line_id)) == '1',
+                              comment=text(request.form, 'review_comment_' + str(line_id), 'Замечание строки', required=False, limit=2000))
+    WorkOrderWorkflowRepository(get_db(), current_project_id()).act(order_id, action,
+        integer(request.form, 'employee_id', 'Ответственное лицо'),
+        comment=text(request.form, 'comment', 'Комментарий действия', required=False, limit=2000),
+        checks=checks, event_key=text(request.form, 'event_key', 'Ключ действия', limit=100),
+        expected_signature=text(request.form, 'event_signature', 'Срез объёмов', limit=64))
+    flash('Действие с нарядом зарегистрировано. Журналы объёмов не изменились.', 'success')
+    return redirect(url_for('work_orders.detail', order_id=order_id), code=303)
+
+
+@bp.route('/work-orders/<int:order_id>/lines/<int:line_id>/events/<kind>', methods=['GET','POST'])
+def register_event(order_id, line_id, kind):
+    if kind not in ('fact', 'confirmation'):
+        raise InputError('Неизвестный журнал событий')
+    line = WorkOrderWorkflowRepository(get_db(), current_project_id()).line(line_id)
+    if line['work_order_id'] != order_id:
+        raise InputError('Строка не относится к выбранному наряду')
+    from .events import journal
+    return journal(kind, forced_line_id=line_id)

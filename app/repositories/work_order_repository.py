@@ -137,7 +137,7 @@ class WorkOrderRepository:
         with transaction(self.db):
             self.work._writable()
             order = self._order(order_id)
-            if order["status"] == "issued":  # Repeated delivery of the same operation.
+            if order["status"] in ("issued", "in_progress", "submitted", "accepted", "closed"):
                 return order["order_number"]
             if order["status"] != "draft":
                 raise ValidationError("Можно выдать только черновик")
@@ -173,7 +173,7 @@ class WorkOrderRepository:
         with transaction(self.db):
             self.work._writable()
             order = self._order(order_id)
-            if order["status"] not in ("draft", "issued"):
+            if order["status"] not in ("draft", "issued", "in_progress"):
                 raise ValidationError("Отмена этого статуса недоступна")
             self.db.execute("UPDATE work_orders SET status='cancelled',cancellation_reason=?,updated_at=? WHERE id=?",
                             (reason, instant(), order_id))
@@ -194,11 +194,11 @@ class WorkOrderRepository:
             result.append(crew)
         return result
 
-    def get_order(self, order_id):
+    def get_order(self, order_id, *, report_date=None, knowledge_cutoff=None):
         with read_snapshot(self.db):
-            return self._get_order(order_id)
+            return self._get_order(order_id, report_date=report_date, knowledge_cutoff=knowledge_cutoff)
 
-    def _get_order(self, order_id):
+    def _get_order(self, order_id, *, report_date=None, knowledge_cutoff=None):
         order = dict(self._order(order_id))
         order["header"] = json.loads(order["header_snapshot"]) if order["header_snapshot"] else self._header_snapshot(order)
         order["lines"] = [dict(row) for row in self.db.execute("SELECT * FROM work_order_lines WHERE work_order_id=? ORDER BY sort_order,id", (order_id,))]
@@ -209,7 +209,8 @@ class WorkOrderRepository:
                              for c in order["crew"] if c["planned_count"] is not None and c["planned_count"] != len(c["names"])]
         order["history"] = self.db.execute("SELECT * FROM work_order_status_history WHERE work_order_id=? ORDER BY id", (order_id,)).fetchall()
         order["approvals"] = self.db.execute("SELECT * FROM work_order_approvals WHERE work_order_id=? ORDER BY id", (order_id,)).fetchall()
-        return order
+        from .work_order_workflow_repository import WorkOrderWorkflowRepository
+        return WorkOrderWorkflowRepository(self.db, self.project_id).enrich(order, report_date, knowledge_cutoff)
 
     def list_orders(self, *, search="", date_from=None, date_to=None, contractor_id=None, building_id=None, status=""):
         with read_snapshot(self.db):

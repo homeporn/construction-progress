@@ -1,0 +1,6 @@
+{% extends 'base.html' %}{% from '_macros.html' import csrf with context %}
+{% block title %}Превышение сменного задания{% endblock %}{% block heading %}Превышение сменного задания{% endblock %}
+{% block content %}<section class="panel"><p class="crew-warning" role="alert">{{ message }}</p><p>Событие ещё не создано. При подтверждении сервер снова проверит остаток и все ограничения.</p><form method="post" class="form-grid">{{ csrf() }}
+{% for key,value in submitted.items(multi=True) if key not in ['csrf_token','workspace_id','allow_assignment_overrun','overrun_reason'] %}<input type="hidden" name="{{ key }}" value="{{ value }}">{% endfor %}
+<label class="full-width confirmation-option"><input type="checkbox" name="allow_assignment_overrun" value="1" required> Подтверждаю превышение задания по наряду</label>
+<label class="full-width">Обязательная причина<textarea name="overrun_reason" maxlength="2000" required>{{ submitted.get('overrun_reason','') }}</textarea></label><button type="submit">Подтвердить и сохранить факт</button></form><p><a href="{{ url_for('events.facts') }}">Вернуться без сохранения</a></p></section>{% endblock %}

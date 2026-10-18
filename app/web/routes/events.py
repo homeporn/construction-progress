@@ -3,6 +3,7 @@ from flask import Blueprint, flash, redirect, render_template, request, url_for
 
 from app.repositories.event_repository import EventRepository
 from app.repositories.work_repository import WorkRepository
+from app.repositories.work_order_workflow_repository import WorkOrderWorkflowRepository, AssignmentOverrunError
 from app.services.progress_service import ProgressService
 from app.calculation_engine.historical import read_snapshot
 from app.calculation_engine.models import Status
@@ -14,13 +15,16 @@ from app.web.views import work_context
 bp = Blueprint("events", __name__)
 
 
-def journal(kind):
+def journal(kind, *, forced_line_id=None):
     repo, event_repo = WorkRepository(get_db(), current_project_id()), EventRepository(get_db(), current_project_id())
     direction = discipline(request.args if request.method == "GET" else request.form)
     confirmation = kind == "confirmation"
     if request.method == "POST":
         data = request.form
         item_id = integer(data, "work_item_id", "Учётная позиция")
+        line_id = integer(data, 'work_order_line_id', 'Строка наряда', optional=True)
+        if forced_line_id is not None and line_id != forced_line_id:
+            raise InputError('Событие из наряда должно ссылаться на выбранную строку')
         building_id, floor_id = integer(data, "building_id", "Корпус"), integer(data, "floor_id", "Этаж")
         items = repo.list_work_items(discipline=direction.value, building_id=building_id, floor_id=floor_id)
         if item_id not in {row["id"] for row in items}:
@@ -34,14 +38,22 @@ def journal(kind):
             raise InputError("Дата события не может быть позже сегодняшней даты регистрации (UTC).")
         kwargs = dict(event_key=text(data, "event_key", "Ключ записи", limit=80),
                       correction_of_id=correction, comment=text(data, "comment", "Комментарий", required=False, limit=2000),
-                      source_type="manual", require_current_plan=True,
+                      source_type="work_order" if forced_line_id else "manual", require_current_plan=True,
+                      work_order_line_id=line_id,
                       plan_version_id=integer(data, "version_id", "Версия плана", optional=True))
         if confirmation:
             event_repo.add_confirmation(item_id, delta, date,
                                         document_ref=text(data, "document_ref", "Документ-основание", limit=200), **kwargs)
         else:
-            event_repo.add_fact(item_id, delta, date, **kwargs)
+            try:
+                event_repo.add_fact(item_id, delta, date, allow_assignment_overrun=data.get('allow_assignment_overrun') == '1',
+                                    overrun_reason=text(data, 'overrun_reason', 'Причина превышения', required=False, limit=2000), **kwargs)
+            except AssignmentOverrunError as exc:
+                return render_template('event_overrun.html', message=str(exc), submitted=data), 400
         flash("Подтверждение зарегистрировано." if confirmation else "Фактическое выполнение зарегистрировано.", "success")
+        if forced_line_id:
+            linked = WorkOrderWorkflowRepository(get_db(), current_project_id()).line(forced_line_id)
+            return redirect(url_for('work_orders.detail', order_id=linked['work_order_id']), code=303)
         return redirect(url_for("events.confirmations" if confirmation else "events.facts", discipline=direction.value), code=303)
     with read_snapshot(get_db()):
         context = work_context(historical=True)
@@ -66,6 +78,13 @@ def journal(kind):
             items = [row for row in queue_rows if row["result"].status in (Status.VALID, Status.WARNING)
                      and row["building_id"] in active_buildings and (not confirmation or row["pending"] > 0)]
         selected_id = integer(request.args, "work_item_id", "Учётная позиция", optional=True)
+        selected_line = forced_line_id or integer(request.args, 'work_order_line_id', 'Строка наряда', optional=True)
+        workflow = WorkOrderWorkflowRepository(get_db(), current_project_id())
+        if selected_line:
+            line = workflow.line(selected_line)
+            if selected_id is not None and selected_id != line['work_item_id']:
+                raise InputError('Наряд не содержит выбранную работу')
+            selected_id = line['work_item_id']
         selected = next((row for row in items if row["id"] == selected_id), None)
         if selected_id and selected is None:
             raise InputError("Выбранная работа недоступна в этом объекте, версии или срезе.")
@@ -75,7 +94,14 @@ def journal(kind):
                  ("discipline", "version_id", "report_date", "knowledge_cutoff", "building_id", "floor_id", "element", "work_type")}
         context.update(confirmation=confirmation, items=items, events=rows, queue_rows=queue_rows,
                        tab=tab, correction_mode=correction_mode, read_only=read_only, selected=selected,
-                       query=query, event_key=secrets.token_urlsafe(24))
+                       query=query, event_key=secrets.token_urlsafe(24), selected_order_line_id=selected_line,
+                       order_choices=workflow.choices(kind) if not read_only and not correction_mode else [],
+                       from_work_order=forced_line_id is not None,
+                       journal_endpoint='events.confirmations' if confirmation else 'events.facts')
+        if forced_line_id is not None:
+            context['order_choices'] = [c for c in context['order_choices'] if c['id'] == forced_line_id]
+        if selected_line and not any(c['id'] == selected_line for c in context['order_choices']):
+            raise InputError('Выбранная строка наряда недоступна для этого события')
         return render_template("events.html", **context)
 
 

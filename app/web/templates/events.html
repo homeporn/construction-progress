@@ -6,13 +6,13 @@
 {% block content %}
 {% include '_event_filters.html' %}
 <div class="panel snapshot-heading"><div><strong>{{ current_project.name }} · {{ discipline_labels[discipline] }}</strong><p>{% if version %}Версия {{ version.version_no }} · {{ status_labels[version.status] }}{% else %}Нет утверждённого плана{% endif %} · Срез {{ report_date }}<br>Отсечение знаний: {{ cutoff }}</p></div>{% if read_only %}<span class="badge">Просмотр среза</span>{% endif %}</div>
-{% if read_only %}<p class="notice">Сохранение доступно в текущем рабочем срезе действующего плана. <a href="{{ url_for(request.endpoint,discipline=discipline.value) }}">Открыть текущий срез →</a></p>{% endif %}
+{% if read_only %}<p class="notice">Сохранение доступно в текущем рабочем срезе действующего плана. <a href="{{ url_for(journal_endpoint,discipline=discipline.value) }}">Открыть текущий срез →</a></p>{% endif %}
 {% if confirmation and not correction_mode %}<nav class="work-tabs" aria-label="Списки подтверждения">
-<a class="button {{ 'active' if tab=='pending' else 'secondary' }}" href="{{ url_for(request.endpoint,tab='pending',**query) }}" {% if tab=='pending' %}aria-current="page"{% endif %}>Ожидают подтверждения</a>
-<a class="button {{ 'active' if tab=='all' else 'secondary' }}" href="{{ url_for(request.endpoint,tab='all',**query) }}" {% if tab=='all' %}aria-current="page"{% endif %}>Все работы</a></nav>{% endif %}
+<a class="button {{ 'active' if tab=='pending' else 'secondary' }}" href="{{ url_for(journal_endpoint,tab='pending',**query) }}" {% if tab=='pending' %}aria-current="page"{% endif %}>Ожидают подтверждения</a>
+<a class="button {{ 'active' if tab=='all' else 'secondary' }}" href="{{ url_for(journal_endpoint,tab='all',**query) }}" {% if tab=='all' %}aria-current="page"{% endif %}>Все работы</a></nav>{% endif %}
 {% if not correction_mode %}{% include '_event_work_table.html' %}{% endif %}
 {{ issues(report) }}
-<p class="help"><a href="{{ url_for(request.endpoint,correction='0' if correction_mode else '1',**query) }}">{{ 'Вернуться к текущему перечню работ' if correction_mode else 'Корректировать историю, включая исключённые работы' }}</a></p>
+<p class="help"><a href="{{ url_for(journal_endpoint,correction='0' if correction_mode else '1',**query) }}">{{ 'Вернуться к текущему перечню работ' if correction_mode else 'Корректировать историю, включая исключённые работы' }}</a></p>
 {% if not read_only %}{% include '_event_form.html' %}{% endif %}
 {% include '_event_history.html' %}
 {% endblock %}

@@ -15,6 +15,8 @@ document.querySelectorAll("form[data-dependent-form]").forEach(function (form) {
   var element = form.querySelector("select[data-element]");
   var workType = form.querySelector("select[data-work-type]");
   var pendingHint = form.querySelector("[data-pending-hint]");
+  var order = form.querySelector('select[data-order-line]');
+  var orderHint = form.querySelector('p[data-order-hint]');
 
   function filterOptions(select, predicate) {
     if (!select) return;
@@ -39,13 +41,23 @@ document.querySelectorAll("form[data-dependent-form]").forEach(function (form) {
     filterOptions(correction, function (option) {
       return work && work.value && option.getAttribute("data-item") === work.value;
     });
+    filterOptions(order, function (option) { return work && work.value && option.getAttribute('data-item') === work.value; });
+    if (order) {
+      order.disabled = Boolean(correction && correction.value) || Boolean(correction && correction.required);
+      if (orderHint) {
+        var origin = correction && correction.selectedIndex >= 0 ? correction.options[correction.selectedIndex] : null;
+        var chosen = order.selectedIndex >= 0 ? order.options[order.selectedIndex] : null;
+        orderHint.textContent = order.disabled ? 'Связь корректировки: ' + (origin && origin.dataset.orderLabel || 'выберите исходное событие') + '. Исходное событие не изменяется.' :
+          chosen && chosen.value ? chosen.dataset.orderHint : 'Без наряда. Общие объёмы работы учитываются независимо от выбора документа.';
+      }
+    }
     if (pendingHint) {
       var selected = work && work.selectedIndex >= 0 ? work.options[work.selectedIndex] : null;
       // Display the server's exact result. Never compute Decimal quantities in JS.
       pendingHint.textContent = selected && selected.value ? selected.getAttribute("data-pending-label") : "Выберите работу";
     }
   }
-  [building, floor, element, workType, work].forEach(function (select) {
+  [building, floor, element, workType, work, order, correction].forEach(function (select) {
     if (select) select.addEventListener("change", update);
   });
   update();

@@ -1,6 +1,6 @@
-# SQLite: схема этапов 1–3.2
+# SQLite: схема этапов 1–3.3
 
-Источник истины — `migrations/001_initial.sql` — `006_work_orders.sql`; миграции 001–005 сохранены без изменений.
+Источник истины — `migrations/001_initial.sql` — `007_work_order_events.sql`; миграции 001–006 сохранены без изменений.
 Схема не использует нативные расширения и пригодна для macOS/Windows.
 
 ```mermaid
@@ -17,6 +17,13 @@ erDiagram
     work_items ||--o{ confirmation_events : confirmed
     fact_events o|--o{ fact_events : corrects
     confirmation_events o|--o{ confirmation_events : corrects
+    work_orders ||--|{ work_order_lines : assigns
+    work_order_lines o|--o{ fact_events : optional_basis
+    work_order_lines o|--o{ confirmation_events : optional_basis
+    work_orders ||--o{ work_order_workflow_actions : decisions
+    work_order_status_history o|--o{ work_order_workflow_actions : transition
+    work_order_workflow_actions ||--o{ work_order_line_reviews : checks
+    work_order_lines ||--o{ work_order_line_reviews : reviewed
 ```
 
 | Таблица | Поля | Ключевые ограничения |
@@ -28,8 +35,8 @@ erDiagram
 | `work_items` | id, building_id, floor_id, catalog_id, discipline | FK building/catalog; составной FK(floor_id,building_id); UNIQUE(building_id,floor_id,catalog_id,discipline) |
 | `plan_versions` | id, project_id, discipline, version_no, status, approved_at, created_at | FK project, UNIQUE(project_id,discipline,version_no), DRAFT/APPROVED, согласованность статуса и времени |
 | `plan_lines` | id, plan_version_id, work_item_id, planned_quantity, labor_norm, **unit** | FK version/item, UNIQUE(version,item), неотрицательные канонические Decimal TEXT, norm может быть NULL только до утверждения |
-| `fact_events` | id, work_item_id, quantity_delta, work_date, recorded_at, comment, correction_of_id, **event_key, unit, source_type** | FK item/self, UNIQUE event_key, ненулевая подписанная Decimal TEXT, неизменяемость |
-| `confirmation_events` | id, work_item_id, quantity_delta, confirmed_date, recorded_at, document_ref, correction_of_id, **event_key, unit, comment, source_type** | FK item/self, UNIQUE event_key, обязательный документ, неизменяемость |
+| `fact_events` | id, work_item_id, quantity_delta, work_date, recorded_at, comment, correction_of_id, **event_key, unit, source_type, work_order_line_id, overrun_reason** | FK item/self/order line, UNIQUE event_key, ненулевая подписанная Decimal TEXT, неизменяемость, необязательная строка наряда |
+| `confirmation_events` | id, work_item_id, quantity_delta, confirmed_date, recorded_at, document_ref, correction_of_id, **event_key, unit, comment, source_type, work_order_line_id** | FK item/self/order line, UNIQUE event_key, обязательный документ, неизменяемость, необязательная строка наряда |
 | `audit_log` | id, entity_type, entity_id, operation, recorded_at, details | INSERT/UPDATE/DELETE, неизменяемость; details содержит OLD/NEW значения в SQL-литералах |
 | `schema_migrations` | name, applied_at | PK name, служебная история применения миграций |
 
@@ -147,3 +154,50 @@ JSON хранится как TEXT и обрабатывается Python без 
 и применяется одной транзакцией с проверкой исходных колонок, количеств строк,
 SHA-256, integrity_check и FK перед COMMIT. Исходные расчётные таблицы и события
 не изменяются. Подробная [схема, инварианты и обновление](work_orders.md).
+
+## Аддитивное расширение 007: события нарядов и решения
+
+`fact_events.work_order_line_id` и `confirmation_events.work_order_line_id` —
+необязательные FK на `work_order_lines.id` без каскадного удаления.
+`work_order_id` получается через строку и не дублируется в событиях.
+Старые записи получают NULL; `source_type`, даты, дельты, ID и коррекции сохраняются.
+`fact_events.overrun_reason` хранит причину отдельно разрешённого превышения задания.
+`work_orders.workflow_reason` передаёт основание текущего перехода в прежнюю историю.
+
+| Новая таблица | Поля | Ограничения |
+| --- | --- | --- |
+| `work_order_workflow_actions` | id, work_order_id, status_history_id, action, employee_id, employee_name_snapshot, performed_at, comment, snapshot, event_signature, event_key | FK order/history/employee; action submitted/accepted/closed; UNIQUE event_key; только добавление |
+| `work_order_line_reviews` | id, action_id, work_order_line_id, checked, comment | FK action/line; UNIQUE(action_id,work_order_line_id); checked 0/1; только добавление |
+
+`work_order_approvals` из 006 ограничена одним согласованием выдачи на документ и
+CHECK `action='issued'`. Чтобы сохранить её строки, схему и ID без пересоздания,
+новые решения добавлены отдельным расширением существующего аудита. Карточка
+объединяет выдачу, новые решения и прежнюю `work_order_status_history`. Повторная
+проверка в `accepted` создаёт новое решение без дублирования перехода статуса.
+`snapshot` — JSON со строковыми Decimal, на момент сдачи/проверки/закрытия;
+это аудиторский снимок, не источник выполнения для расчётного ядра.
+`event_signature` — SHA-256 набора связанных событий выбранного среза для проверки
+изменений между показом формы и сохранением, а также после проверки/закрытия.
+
+Индексы событий используют `(work_order_line_id, business_date, recorded_at)`.
+Триггеры защищают принадлежность строки работе и объекту, выданный номер, единицу,
+дату регистрации после выдачи и допустимые статусы. Коррекция обязана сохранить
+ссылку исходного события, включая NULL. Источник `work_order` требует ссылки;
+`manual` может быть как со ссылкой, так и без неё. Первый обычный положительный
+факт переводит только `issued → in_progress` в одной транзакции с записью события.
+Обычные подтверждения и независимый факт статус не изменяют.
+
+Репозиторий под `BEGIN IMMEDIATE` дополнительно проверяет действующий план,
+хронологию решений, точные общие и связанные накопления, превышение задания,
+доступный остаток подтверждения и исторические ограничения. Связанное подтверждение
+может превышать связанный факт данного наряда, но не общий факт работы. FK и
+триггеры не заменяют точные межстрочные проверки Decimal; прямой SQL не является API.
+Новых таблиц независимого факта или подтверждения наряда нет.
+
+Миграция 007 использует ALTER TABLE ADD COLUMN и новые таблицы/триггеры.
+Существующие таблицы не пересоздаются. До обновления постоянной базы через SQLite
+Backup API создаётся проверенная копия, затем миграция целиком выполняется под
+`BEGIN IMMEDIATE`. Исходные столбцы всех пользовательских таблиц, включая документы,
+персонал, счётчики и аудит, сверяются по количествам и SHA-256, затем проверяются
+`integrity_check` и внешние ключи. Ошибка откатывает и данные, и DDL, и маркер;
+повторный запуск не создаёт дубли. Предыдущие SQL-файлы 001–006 неизменны.
