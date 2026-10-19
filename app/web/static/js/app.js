@@ -98,3 +98,16 @@ document.querySelectorAll("select[data-reset-version]").forEach(function (select
     if (version) version.value = "";
   });
 });
+
+// Analytics dependency resets only; all numerical work stays on the server.
+document.querySelectorAll('form[data-analytics-filters]').forEach(function (form) {
+  var building = form.querySelector('[name="building_id"]');
+  var direction = form.querySelector('[name="discipline"]');
+  var group = form.querySelector('[name="group_id"]');
+  if (building) building.addEventListener('change', function () { form.querySelector('[name="floor_id"]').value = ''; });
+  if (direction) direction.addEventListener('change', function () {
+    form.querySelector('[name="version_id"]').value = '';
+    group.value = ''; form.querySelector('[name="group_version"]').value = '';
+  });
+  if (group) group.addEventListener('change', function () { form.querySelector('[name="group_version"]').value = ''; });
+});

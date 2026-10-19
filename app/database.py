@@ -79,6 +79,9 @@ def migrate(db):
     elif existing and markers and (PROJECT_ROOT / "migrations/007_work_order_events.sql").exists() and not db.execute(
             "SELECT 1 FROM schema_migrations WHERE name='007_work_order_events.sql'").fetchone():
         backup_database(db, label="work-order-events")
+    elif existing and markers and (PROJECT_ROOT / "migrations/008_analytics.sql").exists() and not db.execute(
+            "SELECT 1 FROM schema_migrations WHERE name='008_analytics.sql'").fetchone():
+        backup_database(db, label="analytics")
     db.execute("CREATE TABLE IF NOT EXISTS schema_migrations "
                "(name TEXT PRIMARY KEY, applied_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)")
     for path in sorted((PROJECT_ROOT / "migrations").glob("*.sql")):
@@ -98,9 +101,9 @@ def migrate(db):
             if db.execute("SELECT 1 FROM schema_migrations WHERE name=?", (path.name,)).fetchone():
                 db.commit()
                 continue
-            preserve_existing = rebuild or path.name in ("006_work_orders.sql", "007_work_order_events.sql")
+            preserve_existing = rebuild or path.name in ("006_work_orders.sql", "007_work_order_events.sql", "008_analytics.sql")
             original_columns = None
-            if path.name == "007_work_order_events.sql":
+            if path.name in ("007_work_order_events.sql", "008_analytics.sql"):
                 original_columns = {row[0]: [c[1] for c in db.execute('PRAGMA table_info("{}")'.format(row[0].replace('"', '""')))]
                                     for row in db.execute("SELECT name FROM sqlite_master WHERE type='table' "
                                                           "AND name NOT LIKE 'sqlite_%' AND name!='schema_migrations'")}

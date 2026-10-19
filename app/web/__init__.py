@@ -139,8 +139,8 @@ def create_app(config=None):
             code, message = 500, "Не удалось выполнить операцию. Данные не сохранены. Проверьте доступность базы и повторите запрос."
         return render_template("error.html", message=message, back_url="/"), code
 
-    from .routes import dashboard, buildings, catalog, volumes, events, progress, projects, personnel, work_orders
-    for module in (dashboard, buildings, catalog, volumes, events, progress, projects, personnel, work_orders):
+    from .routes import dashboard, buildings, catalog, volumes, events, progress, projects, personnel, work_orders, analytics
+    for module in (dashboard, buildings, catalog, volumes, events, progress, projects, personnel, work_orders, analytics):
         app.register_blueprint(module.bp)
 
     @app.post("/shutdown")

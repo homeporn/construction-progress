@@ -161,6 +161,15 @@ class WorkRepository:
                 "INSERT INTO work_catalog(code,work_type,element,name,unit) VALUES (?,?,?,?,?)",
                 (code, work_type, element, name, unit)).lastrowid
 
+    def set_catalog_norm(self, catalog_id, labor_norm):
+        norm = canonical(labor_norm) if labor_norm is not None else None
+        if norm is not None and Decimal(norm)<=0:
+            raise ValidationError('Справочный норматив должен быть положительным')
+        with transaction(self.db):
+            cursor = self.db.execute('UPDATE work_catalog SET reference_labor_norm=? WHERE id=?', (norm,catalog_id))
+            if cursor.rowcount!=1:
+                raise ValidationError('Код работы не найден')
+
     def add_work_item(self, building_id, floor_id, catalog_id, discipline=Discipline.CONSTRUCTION):
         with transaction(self.db):
             self._building(building_id, writable=True)

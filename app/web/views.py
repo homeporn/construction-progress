@@ -37,12 +37,14 @@ def work_context(*, historical=False):
     report_items = service.filtered_items(report, filters)
     total = (service.group(report_items) if report and report.items else
              report.total if report and report.total else GroupProgress(status=Status.INVALID if report else Status.NO_DATA))
+    catalog_norms={c['id']:dict(c).get('reference_labor_norm') for c in catalog}
+    positions=[dict(row,reference_labor_norm=catalog_norms.get(row['catalog_id'])) for row in repo.list_work_items(discipline=direction.value, **filters)]
     return dict(discipline=direction, filters=filters, buildings=buildings, floors=floors,
                 entry_buildings=entry_buildings, entry_floors=entry_floors,
                 catalog=catalog, elements=sorted({c["element"] for c in catalog}),
                 work_types=sorted({c["work_type"] for c in catalog}), versions=versions,
                 version=version, report_date=report_date, cutoff=cutoff, report=report,
                 results={i.source.work_item_id: i for i in report_items}, total=total,
-                items=repo.list_work_items(discipline=direction.value, **filters),
+                items=positions,
                 lines={line["work_item_id"]: line for line in repo.list_plan_lines(version["id"])} if version else {},
                 preview=preview)

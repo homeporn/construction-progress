@@ -1,7 +1,7 @@
 from flask import Blueprint, flash, redirect, render_template, request, url_for
 from app.repositories.work_repository import WorkRepository
 from app.web import get_db
-from app.web.forms import integer, text
+from app.web.forms import integer, text, quantity
 
 bp = Blueprint("catalog", __name__)
 
@@ -31,3 +31,11 @@ def save():
         repo.add_catalog_entry(*values)
     flash("Кодификатор сохранён.", "success")
     return redirect(url_for("catalog.index"), code=303)
+
+
+@bp.post('/catalog/norm')
+def save_norm():
+    WorkRepository(get_db()).set_catalog_norm(integer(request.form,'catalog_id','Код работы'),
+        quantity(request.form,'reference_labor_norm','Справочный норматив',optional=True))
+    flash('Справочный норматив сохранён. Утверждённые планы не изменены.','success')
+    return redirect(url_for('catalog.index'),code=303)
