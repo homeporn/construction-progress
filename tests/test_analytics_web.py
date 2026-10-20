@@ -10,6 +10,7 @@ import pytest
 from app.repositories.project_repository import ProjectRepository
 from app.repositories.work_repository import WorkRepository
 from app.services.xlsx_export import export_xlsx, SHEETS
+from app.time_utils import instant
 from test_analytics import school, report, group, CUTOFF
 from test_web import webapp, client, get, post, ORIGIN
 
@@ -60,12 +61,12 @@ def test_group_creation_edit_restore_archive_and_history(client,school):
     g=s['groups'].list()[0]['group_id'];path='/analytics/groups/'+str(g)
     edit=dict(values,event_key='web-edit',expected_version=1,exclude_id=[str(s['items'][2])])
     assert post(client,path,edit).status_code==303
-    assert report(s,group_id=g)['group']['planned']==7500
+    assert report(s,group_id=g,knowledge_cutoff=instant())['group']['planned']==7500
     html=get(client,path+'?group_version=1').get_data(as_text=True)
     assert 'только просмотр' in html and 'Сохранить новую редакцию</button>' not in html
     for action,revision in [('reset',2),('archive',3),('restore',4)]:
         assert post(client,path+'/actions',dict(action=action,expected_version=revision,event_key='web-'+action)).status_code==303
-    assert s['groups'].get(g)['version_no']==5 and report(s,group_id=g)['group']['planned']==10000
+    assert s['groups'].get(g)['version_no']==5 and report(s,group_id=g,knowledge_cutoff=instant())['group']['planned']==10000
     assert post(client,path,edit).status_code==303  # Repeat token returns same operation.
     assert s['groups'].get(g)['version_no']==5
 

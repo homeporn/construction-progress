@@ -86,7 +86,8 @@ def test_server_binds_only_loopback_restores_signals_and_closes(tmp_path, monkey
             local.stop_event.set()
         def server_close(self):
             calls.append("closed")
-    def make_server(host, port, app, threaded):
+    def make_server(host, port, app, threaded, request_handler):
+        assert request_handler is module.LocalRequestHandler
         calls.append((host, port, app.debug, threaded))
         return FakeHTTPServer()
     monkeypatch.setattr(module, "make_server", make_server)

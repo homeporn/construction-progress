@@ -1,13 +1,16 @@
 {% extends 'base.html' %}{% from '_macros.html' import csrf with context %}
 {% block title %}{{ kind_label }}{% endblock %}{% block heading %}{{ kind_label }}{% endblock %}
 {% block subtitle %}{{ 'Общий справочник специальностей' if kind=='specialties' else current_project.name }}{% endblock %}
-{% block content %}<section class="panel">{% if error %}<p class="danger-text" role="alert">{{ error }}</p>{% endif %}<form method="post" class="form-grid">{{ csrf() }}
+{% block content %}{% include '_personnel_nav.html' %}<section class="panel">{% if error %}<p class="danger-text" role="alert">{{ error }}</p>{% endif %}<form method="post" class="form-grid">{{ csrf() }}
 {% if kind=='contractors' %}
 <label>Наименование<input name="name" value="{{ record.name|default('') }}" maxlength="200" required></label><label>Краткое наименование<input name="short_name" value="{{ record.short_name|default('') }}" maxlength="200"></label>
 <label>ИНН (необязательно)<input name="inn" value="{{ record.inn|default('') }}" inputmode="numeric" maxlength="12"></label><label>Контактное лицо<input name="contact_person" value="{{ record.contact_person|default('') }}" maxlength="200"></label><label>Телефон<input name="phone" value="{{ record.phone|default('') }}" maxlength="80"></label>
 {% elif kind=='employees' %}
 <label>ФИО<input name="full_name" value="{{ record.full_name|default('') }}" maxlength="200" required></label><label>Должность<input name="position" value="{{ record.position|default('') }}" maxlength="200"></label>
-<label>Подрядчик<select name="contractor_id"><option value="">Без привязки</option>{% for c in contractors %}<option value="{{ c.id }}" {% if record.contractor_id|string==c.id|string %}selected{% endif %} {% if not c.is_active %}disabled{% endif %}>{{ c.name }}{{ ' · архив' if not c.is_active else '' }}</option>{% endfor %}</select></label>
-<label>Специальность<select name="specialty_id"><option value="">Не указана</option>{% for s in specialties %}<option value="{{ s.id }}" {% if record.specialty_id|string==s.id|string %}selected{% endif %}>{{ s.name }}</option>{% endfor %}</select></label>
+<label>Подрядчик<select name="contractor_id" required><option value="">Выберите подрядчика</option>{% for c in contractors %}<option value="{{ c.id }}" {% if record.contractor_id|string==c.id|string %}selected{% endif %} {% if not c.is_active %}disabled{% endif %}>{{ c.name }}{{ ' · архив' if not c.is_active else '' }}</option>{% endfor %}</select></label>
+<label>Специальность<select name="specialty_id" required><option value="">Не указана</option>{% for s in specialties %}<option value="{{ s.id }}" {% if record.specialty_id|string==s.id|string %}selected{% endif %}>{{ s.name }}</option>{% endfor %}</select></label>
+<label>Бригада (необязательно)<select name="brigade_id"><option value="">Без изменения назначения</option>{% for b in brigades %}<option value="{{ b.id }}" data-contractor="{{ b.contractor_id }}" {% if record.brigade_id|string==b.id|string %}selected{% endif %}>№ {{ b.number }} · {{ b.contractor_name }}</option>{% endfor %}</select></label><label>Дата начала назначения<input type="date" name="effective_date" value="{{ record.effective_date|default(today) }}" required></label>
 {% else %}<label>Наименование<input name="name" value="{{ record.name|default('') }}" maxlength="200" required></label><label>Код<input name="code" value="{{ record.code|default('') }}" maxlength="80" required></label>{% endif %}
 <div class="full-width"><button type="submit">Сохранить</button> <a class="button secondary" href="{{ url_for('personnel.index') }}">Отмена</a></div></form></section>{% endblock %}
+
+{% block scripts %}<script src="{{ url_for('static',filename='js/personnel.js') }}" defer></script>{% endblock %}

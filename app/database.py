@@ -82,13 +82,16 @@ def migrate(db):
     elif existing and markers and (PROJECT_ROOT / "migrations/008_analytics.sql").exists() and not db.execute(
             "SELECT 1 FROM schema_migrations WHERE name='008_analytics.sql'").fetchone():
         backup_database(db, label="analytics")
+    elif existing and markers and (PROJECT_ROOT / "migrations/009_personnel_import.sql").exists() and not db.execute(
+            "SELECT 1 FROM schema_migrations WHERE name='009_personnel_import.sql'").fetchone():
+        backup_database(db, label="personnel-import")
     db.execute("CREATE TABLE IF NOT EXISTS schema_migrations "
                "(name TEXT PRIMARY KEY, applied_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)")
     for path in sorted((PROJECT_ROOT / "migrations").glob("*.sql")):
         # executescript commits an existing transaction, so never accept one.
         if db.in_transaction:
             raise RuntimeError("Run migrations outside a transaction")
-        rebuild = path.name == "004_projects.sql"
+        rebuild = path.name in ("004_projects.sql", "009_personnel_import.sql")
         foreign_keys = db.execute("PRAGMA foreign_keys").fetchone()[0]
         legacy_row = db.execute("PRAGMA legacy_alter_table").fetchone()
         # SQLite 3.24 already uses the old rename behavior and has no such pragma.
@@ -103,7 +106,7 @@ def migrate(db):
                 continue
             preserve_existing = rebuild or path.name in ("006_work_orders.sql", "007_work_order_events.sql", "008_analytics.sql")
             original_columns = None
-            if path.name in ("007_work_order_events.sql", "008_analytics.sql"):
+            if path.name in ("007_work_order_events.sql", "008_analytics.sql", "009_personnel_import.sql"):
                 original_columns = {row[0]: [c[1] for c in db.execute('PRAGMA table_info("{}")'.format(row[0].replace('"', '""')))]
                                     for row in db.execute("SELECT name FROM sqlite_master WHERE type='table' "
                                                           "AND name NOT LIKE 'sqlite_%' AND name!='schema_migrations'")}
@@ -117,13 +120,19 @@ def migrate(db):
                     statement = ""
             if statement.strip():
                 raise RuntimeError("Incomplete migration: " + path.name)
+            if path.name == "009_personnel_import.sql":
+                # Unicode case folding is deliberately done in Python, rather
+                # than SQLite's ASCII-only lower(). Existing IDs stay intact.
+                for row in db.execute("SELECT id,name FROM specialties ORDER BY id"):
+                    db.execute("INSERT INTO specialty_name_keys(normalized_name,specialty_id) VALUES (?,?) "
+                               "ON CONFLICT(normalized_name) DO NOTHING", (" ".join(row[1].split()).casefold(), row[0]))
             if preserve_existing:
                 if _fingerprints(db, preserved[0])[1] != preserved[1]:
                     raise RuntimeError("Миграция изменила существующие данные; обновление отменено")
                 if db.execute("PRAGMA foreign_key_check").fetchall() or db.execute("PRAGMA integrity_check").fetchone()[0] != "ok":
                     raise RuntimeError("Миграция нарушила целостность базы; обновление отменено")
                 # Only a new empty installation receives the traditional buildings.
-                if rebuild and preserved[1]["buildings"][0] == 0:
+                if path.name == "004_projects.sql" and preserved[1]["buildings"][0] == 0:
                     db.executemany("INSERT INTO buildings(project_id,code,name,sort_order) VALUES (1,?,?,?)",
                                    [("A", "Корпус А", 1), ("B", "Корпус B", 2), ("C", "Корпус C", 3)])
             db.execute("INSERT INTO schema_migrations(name) VALUES (?)", (path.name,))

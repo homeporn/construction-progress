@@ -90,7 +90,7 @@ def test_manual_inclusion_outside_automatic_building_and_deduplication(school):
     assert data['group']['planned']==7500 and len(data['rows'])==2
     assert {r['id'] for r in data['rows']}==set(s['items'][:2])
     s['groups'].revise(g,reset=True,expected_version=1)
-    assert report(s,group_id=g)['group']['planned']==4000
+    assert report(s,group_id=g,knowledge_cutoff=instant())['group']['planned']==4000
 
 
 @pytest.mark.parametrize('kwargs',[{'includes':[1,1]},{'excludes':[1,1]},{'includes':[1],'excludes':[1]}])

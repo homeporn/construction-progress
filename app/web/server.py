@@ -4,9 +4,17 @@ from contextlib import redirect_stderr
 from io import StringIO
 import threading
 import webbrowser
+from urllib.parse import urlsplit
 
-from werkzeug.serving import make_server
+from werkzeug.serving import make_server, WSGIRequestHandler
 from . import create_app
+
+
+class LocalRequestHandler(WSGIRequestHandler):
+    def log_request(self, code="-", size="-"):
+        # Search queries may contain employee names. Operational access logs
+        # need only the route, status and size, never query strings or bodies.
+        self.log("info", '"%s %s" %s %s', self.command, urlsplit(self.path).path, code, size)
 
 
 class LocalServer:
@@ -20,7 +28,7 @@ class LocalServer:
         # startup failure for Terminal without a traceback or an English fatal log.
         with redirect_stderr(StringIO()):
             try:
-                self.httpd = make_server("127.0.0.1", port, self.app, threaded=False)
+                self.httpd = make_server("127.0.0.1", port, self.app, threaded=False, request_handler=LocalRequestHandler)
             except SystemExit:
                 raise OSError("Не удалось открыть 127.0.0.1:{}. Порт может быть занят или локальные сокеты недоступны. Используйте --port 0 или другой порт.".format(port)) from None
         self.httpd.timeout = 0.3

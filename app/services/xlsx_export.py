@@ -26,16 +26,17 @@ def xml(element):
     return tostring(element,encoding='utf-8',xml_declaration=True)
 
 
-def sheet(headers, rows, percentage_columns=()):
+def sheet(headers, rows, percentage_columns=(), *, exact_column=True, text_columns=()):
+    suffix=['Точные значения (>15 цифр; Excel ограничен 15)'] if exact_column else []
     root=Element('worksheet',xmlns=NS)
     views=SubElement(root,'sheetViews');view=SubElement(views,'sheetView',workbookViewId='0')
     SubElement(view,'pane',ySplit='1',topLeftCell='A2',activePane='bottomLeft',state='frozen')
     cols=SubElement(root,'cols')
-    for i,h in enumerate(headers+['Точные значения (>15 цифр; Excel ограничен 15)'],1):
-        SubElement(cols,'col',min=str(i),max=str(i),width=str(min(48,max(15,len(h)+2))),customWidth='1')
+    for i,h in enumerate(headers+suffix,1):
+        SubElement(cols,'col',min=str(i),max=str(i),width=str(min(48,max(15,len(h)+2))),customWidth='1',**({'style':'6'} if i in text_columns else {}))
     data=SubElement(root,'sheetData')
     count=0
-    for index,values in enumerate([headers+['Точные значения (>15 цифр; Excel ограничен 15)']]+list(rows),1):
+    for index,values in enumerate([headers+suffix]+list(rows),1):
         if index>1048576:raise ValueError('Превышен предел строк листа Excel')
         row=SubElement(data,'row',r=str(index));exact=[]
         for j,value in enumerate(values,1):
@@ -62,11 +63,11 @@ def sheet(headers, rows, percentage_columns=()):
                 value=re.sub(r'[\x00-\x08\x0b\x0c\x0e-\x1f]','�',str(value))
                 if len(value)>32767:raise ValueError('Текст превышает лимит ячейки Excel 32767 символов. Сократите выборку отчёта')
                 text.text=value
-        if index>1 and exact:
+        if index>1 and exact and exact_column:
             c=SubElement(row,'c',r=column(len(headers)+1)+str(index),t='inlineStr')
             SubElement(SubElement(c,'is'),'t').text='; '.join(exact)
         count=index
-    SubElement(root,'autoFilter',ref='A1:'+column(len(headers)+1)+str(max(1,count)))
+    SubElement(root,'autoFilter',ref='A1:'+column(len(headers)+len(suffix))+str(max(1,count)))
     return xml(root)
 
 
@@ -82,8 +83,8 @@ def styles():
     for kind in ('none','gray125'):SubElement(SubElement(fills,'fill'),'patternFill',patternType=kind)
     borders=SubElement(root,'borders',count='1');SubElement(borders,'border')
     bases=SubElement(root,'cellStyleXfs',count='1');SubElement(bases,'xf',numFmtId='0',fontId='0',fillId='0',borderId='0')
-    cells=SubElement(root,'cellXfs',count='6')
-    for i,fmt in enumerate((0,0,164,165,166,167)):
+    cells=SubElement(root,'cellXfs',count='7')
+    for i,fmt in enumerate((0,0,164,165,166,167,49)):
         xf=SubElement(cells,'xf',numFmtId=str(fmt),fontId='1' if i==1 else '0',fillId='0',borderId='0',xfId='0',applyNumberFormat='1')
         if i==1:SubElement(xf,'alignment',wrapText='1',vertical='top')
     cs=SubElement(root,'cellStyles',count='1');SubElement(cs,'cellStyle',name='Normal',xfId='0',builtinId='0')
@@ -113,20 +114,24 @@ def export_xlsx(data, deviation_mode='all'):
         [[g['group_id'],g['name'],g['version_no'],datetime.fromisoformat(g['changed_at'].replace('Z','+00:00')),'Да' if g['archived'] else 'Нет',g['code'],g['unit'],', '.join(str(r['id']) for r in g['rows']),'; '.join(g['warnings'])]+quantities(g) for g in data['group_views']],(15,16)))
     bodies.append(combine(['Позиция','Корпус','Этаж','Конструктив','Код','Наименование','Ед.','Норматив, чел.-ч/ед.','Плановая трудоёмкость, чел.-ч','В плане']+qhead,
         [[r['id'],r['building_name'],r['floor_code'],r['element'],r['code'],r['name'],r['unit'],r['labor_norm'],r['result'].planned_labor,'Да' if r['in_plan'] else 'Нет']+quantities(r) for r in data['rows']],(16,17)))
+    return pack_workbook(SHEETS,bodies)
+
+
+def pack_workbook(names,bodies):
     output=BytesIO()
     with ZipFile(output,'w',ZIP_DEFLATED) as archive:
         types=Element('Types',xmlns='http://schemas.openxmlformats.org/package/2006/content-types')
         SubElement(types,'Default',Extension='rels',ContentType='application/vnd.openxmlformats-package.relationships+xml')
         SubElement(types,'Default',Extension='xml',ContentType='application/xml')
-        for part,kind in [('workbook.xml','sheet.main'),('styles.xml','styles')]+[('worksheets/sheet'+str(i)+'.xml','worksheet') for i in range(1,7)]:
+        for part,kind in [('workbook.xml','sheet.main'),('styles.xml','styles')]+[('worksheets/sheet'+str(i)+'.xml','worksheet') for i in range(1,len(names)+1)]:
             SubElement(types,'Override',PartName='/xl/'+part,ContentType='application/vnd.openxmlformats-officedocument.spreadsheetml.'+kind+'+xml')
         archive.writestr('[Content_Types].xml',xml(types))
         rels=Element('Relationships',xmlns=PACKAGE);SubElement(rels,'Relationship',Id='rId1',Type=REL+'/officeDocument',Target='xl/workbook.xml');archive.writestr('_rels/.rels',xml(rels))
         wb=Element('workbook',xmlns=NS);sheets=SubElement(wb,'sheets');links=Element('Relationships',xmlns=PACKAGE)
-        for i,(name,body) in enumerate(zip(SHEETS,bodies),1):
+        for i,(name,body) in enumerate(zip(names,bodies),1):
             SubElement(sheets,'sheet',name=name,sheetId=str(i),attrib={'{'+REL+'}id':'rId'+str(i)})
             SubElement(links,'Relationship',Id='rId'+str(i),Type=REL+'/worksheet',Target='worksheets/sheet'+str(i)+'.xml')
             archive.writestr('xl/worksheets/sheet'+str(i)+'.xml',body)
-        SubElement(links,'Relationship',Id='rId7',Type=REL+'/styles',Target='styles.xml')
+        SubElement(links,'Relationship',Id='rId'+str(len(names)+1),Type=REL+'/styles',Target='styles.xml')
         archive.writestr('xl/workbook.xml',xml(wb));archive.writestr('xl/_rels/workbook.xml.rels',xml(links));archive.writestr('xl/styles.xml',styles())
     return output.getvalue()

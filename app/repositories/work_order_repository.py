@@ -41,7 +41,7 @@ class WorkOrderRepository:
         issuer, foreman = data.get("issued_by_employee_id"), data.get("foreman_employee_id")
         for employee_id in (issuer, foreman):
             if employee_id is not None:
-                employee = self.people.employee(employee_id, active=True)
+                employee = self.people.employee(employee_id, active=True, as_of=date)
                 if employee_id == foreman and employee["contractor_id"] not in (None, contractor["id"]):
                     raise ValidationError("Бригадир относится к другой подрядной организации")
         return (date, start, end, contractor["id"], issuer, foreman, clean(data.get("notes", ""), "Примечание", 4000, False))
@@ -69,7 +69,7 @@ class WorkOrderRepository:
                            len(result) + 1, clean(line.get("remarks", ""), "Примечание строки", 2000, False)))
         return result
 
-    def _crew_values(self, crews, contractor_id):
+    def _crew_values(self, crews, contractor_id, shift_date=None):
         seen_specialties, seen_people, result = set(), set(), []
         for crew in crews:
             specialty = self.people.specialty(crew.get("specialty_id"))
@@ -84,7 +84,7 @@ class WorkOrderRepository:
                 if employee_id in seen_people:
                     raise ValidationError("Работник не может повторяться в составе бригады")
                 seen_people.add(employee_id)
-                employee = self.people.employee(employee_id, active=True)
+                employee = self.people.employee(employee_id, active=True, as_of=shift_date)
                 if employee["specialty_id"] != specialty["id"] or employee["contractor_id"] not in (None, contractor_id):
                     raise ValidationError("Работник не соответствует специальности или подрядчику")
                 members.append(employee_id)
@@ -95,7 +95,35 @@ class WorkOrderRepository:
                            specialty["name"], encoded(names), members))
         return result
 
-    def save_draft(self, header, lines=(), crew=(), *, order_id=None, expected_revision=None, draft_key=None):
+    def _with_brigades(self, crews, brigade_ids, contractor_id, shift_date):
+        from .brigade_repository import BrigadeRepository
+        brigades=BrigadeRepository(self.db,self.project_id)
+        result=[dict(c,employee_ids=list(c.get('employee_ids',[]))) for c in crews]
+        by_specialty={c['specialty_id']:c for c in result}
+        selected={e for c in result for e in c['employee_ids']}
+        if len(brigade_ids)!=len(set(brigade_ids)):
+            raise ValidationError('Бригада не может повторяться в выборе')
+        for brigade_id in brigade_ids:
+            b=brigades.get(brigade_id,active=True)
+            if b['contractor_id']!=contractor_id:raise ValidationError('Бригада относится к другому подрядчику')
+            members=[m for m in brigades.members(brigade_id,shift_date) if m['is_active']]
+            if not members:raise ValidationError('На дату смены в бригаде нет доступных работников текущего объекта')
+            for m in members:
+                if m['specialty_id'] is None:raise ValidationError('Сначала заполните специальности работников бригады')
+                c=by_specialty.get(m['specialty_id'])
+                if c is None:
+                    c=dict(specialty_id=m['specialty_id'],planned_count=None,employee_ids=[],comment='')
+                    result.append(c);by_specialty[m['specialty_id']]=c
+                if m['employee_id'] not in selected:
+                    c['employee_ids'].append(m['employee_id']);selected.add(m['employee_id'])
+        return result
+
+    def _member_snapshot(self, employee_id, shift_date):
+        from .brigade_repository import BrigadeRepository
+        member=BrigadeRepository(self.db,self.project_id).current(employee_id,shift_date)
+        return (member['brigade_id'],member['number']) if member else (None,'')
+
+    def save_draft(self, header, lines=(), crew=(), *, order_id=None, expected_revision=None, draft_key=None, brigade_ids=()):
         with transaction(self.db):
             self.work._writable()
             if order_id is not None:
@@ -112,7 +140,9 @@ class WorkOrderRepository:
                     return existing["id"]
             values = self._header(header)
             line_values = self._line_values(lines)
-            crew_values = self._crew_values(crew, values[3])
+            if brigade_ids:
+                crew=self._with_brigades(crew,list(brigade_ids),values[3],values[0])
+            crew_values = self._crew_values(crew, values[3], values[0])
             now = instant()
             if order_id is None:
                 order_id = self.db.execute("INSERT INTO work_orders(project_id,shift_date,shift_start,shift_end,contractor_id,"
@@ -130,7 +160,11 @@ class WorkOrderRepository:
             for values in crew_values:
                 crew_id = self.db.execute("INSERT INTO work_order_crew(work_order_id,specialty_id,planned_count,comment,"
                     "specialty_name_snapshot,employees_snapshot) VALUES (?,?,?,?,?,?)", (order_id,) + values[:5]).lastrowid
-                self.db.executemany("INSERT INTO work_order_crew_members(crew_id,employee_id) VALUES (?,?)", [(crew_id, e) for e in values[5]])
+                if self.people.extended:
+                    self.db.executemany("INSERT INTO work_order_crew_members(crew_id,employee_id,brigade_id,brigade_number_snapshot) VALUES (?,?,?,?)",
+                        [(crew_id,e)+self._member_snapshot(e,header['shift_date']) for e in values[5]])
+                else:
+                    self.db.executemany("INSERT INTO work_order_crew_members(crew_id,employee_id) VALUES (?,?)", [(crew_id, e) for e in values[5]])
             return order_id
 
     def issue(self, order_id):
@@ -153,9 +187,13 @@ class WorkOrderRepository:
             crews = self._read_crew(order_id)
             if not crews:
                 raise ValidationError("Добавьте состав бригады: численность или поимённый список")
-            for crew, values in zip(crews, self._crew_values(crews, order["contractor_id"])):
+            for crew, values in zip(crews, self._crew_values(crews, order["contractor_id"], order['shift_date'])):
                 self.db.execute("UPDATE work_order_crew SET specialty_name_snapshot=?,employees_snapshot=? WHERE id=?",
                                 (values[3], values[4], crew["id"]))
+                if self.people.extended:
+                    for employee_id in values[5]:
+                        self.db.execute('UPDATE work_order_crew_members SET brigade_id=?,brigade_number_snapshot=? WHERE crew_id=? AND employee_id=?',
+                            self._member_snapshot(employee_id,order['shift_date'])+(crew['id'],employee_id))
             self.db.execute("INSERT INTO work_order_sequences(project_id,last_number) VALUES (?,1) "
                             "ON CONFLICT(project_id) DO UPDATE SET last_number=last_number+1", (self.project_id,))
             number = self.db.execute("SELECT last_number FROM work_order_sequences WHERE project_id=?", (self.project_id,)).fetchone()[0]
@@ -191,6 +229,9 @@ class WorkOrderRepository:
             crew = dict(row)
             crew["employee_ids"] = [r[0] for r in self.db.execute("SELECT employee_id FROM work_order_crew_members WHERE crew_id=? ORDER BY id", (row["id"],))]
             crew["names"] = json.loads(row["employees_snapshot"])
+            crew['brigades'] = list(dict.fromkeys(r[0] for r in self.db.execute(
+                'SELECT brigade_number_snapshot FROM work_order_crew_members WHERE crew_id=? AND brigade_number_snapshot!=\'\' ORDER BY id',
+                (row['id'],)))) if self.people.extended else []
             result.append(crew)
         return result
 

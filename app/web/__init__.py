@@ -60,6 +60,11 @@ def create_app(config=None):
 
     @app.before_request
     def local_request_guard():
+        # Only the local import wizard accepts larger bodies. Ordinary edit
+        # forms retain their original 128 KiB ceiling.
+        if request.endpoint == "personnel_import.wizard":
+            request.max_content_length = 5 * 1024 * 1024 + 64 * 1024
+            request.max_form_memory_size = 5 * 1024 * 1024
         expected = app.config["LOCAL_ORIGIN"]
         if request.host != urlsplit(expected).netloc or request.remote_addr != "127.0.0.1":
             abort(403)
@@ -139,8 +144,8 @@ def create_app(config=None):
             code, message = 500, "Не удалось выполнить операцию. Данные не сохранены. Проверьте доступность базы и повторите запрос."
         return render_template("error.html", message=message, back_url="/"), code
 
-    from .routes import dashboard, buildings, catalog, volumes, events, progress, projects, personnel, work_orders, analytics
-    for module in (dashboard, buildings, catalog, volumes, events, progress, projects, personnel, work_orders, analytics):
+    from .routes import dashboard, buildings, catalog, volumes, events, progress, projects, personnel, work_orders, analytics, personnel_management, personnel_import
+    for module in (dashboard, buildings, catalog, volumes, events, progress, projects, personnel, work_orders, analytics, personnel_management, personnel_import):
         app.register_blueprint(module.bp)
 
     @app.post("/shutdown")

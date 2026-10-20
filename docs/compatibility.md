@@ -186,3 +186,16 @@ JSON1 и новых платформенных API; прежний миниму�
 После обновления требуется повторная приёмка аналитики, фильтров, SVG, групп
 и XLSX в Safari/Excel/Numbers на целевом Mac. Проверка Linux не подтверждает
 совместимость с Catalina или Apple Silicon на реальном устройстве.
+
+
+## Этап 4.1 — 2026-10-20
+
+Предыдущая версия принята пользователем на Mac. Новый персонал, бригады и
+XLSX-импорт проверены в Linux/Chromium; отдельная проверка Safari/Catalina и
+современных Intel/Apple Silicon обязательна. Python, requirements и start.command
+не изменены. Чтение XLSX использует стандартные zipfile, ElementTree, Decimal,
+hashlib; ни openpyxl, ни новые бинарные пакеты для приложения не требуются.
+009 использует перенос таблиц, ALTER TABLE ADD COLUMN, FK, индексы и триггеры,
+сохраняя прежний минимум SQLite 3.24. Результаты и ручная приёмка:
+[stage41_results.md](stage41_results.md),
+[stage41_personnel_import.md](stage41_personnel_import.md).

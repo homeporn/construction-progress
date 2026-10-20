@@ -6,6 +6,7 @@ from flask import Blueprint, flash, redirect, render_template, request, url_for
 
 from app.repositories.base import ValidationError
 from app.repositories.work_order_repository import WorkOrderRepository
+from app.repositories.brigade_repository import BrigadeRepository
 from app.repositories.work_order_workflow_repository import WorkOrderWorkflowRepository
 from app.time_utils import instant
 from app.work_order_models import STATUS_LABELS
@@ -76,7 +77,8 @@ def edit(order_id=None):
             header, lines, crew = parse_form(request.form)
             saved = repo.save_draft(header, lines, crew, order_id=order_id,
                                    expected_revision=integer(request.form, 'revision', 'Редакция черновика') if order_id else None,
-                                   draft_key=text(request.form, 'draft_key', 'Ключ формы', limit=100))
+                                   draft_key=text(request.form, 'draft_key', 'Ключ формы', limit=100),
+                                   brigade_ids=[integer(dict(id=b),'id','Бригада') for b in request.form.getlist('brigade_id')])
         except (ValidationError, ValueError) as exc:
             error = str(exc)
             # Preserve every submitted value, including repeatable rows, on errors.
@@ -87,6 +89,7 @@ def edit(order_id=None):
             order['lines'] = [dict(work_item_id=int(i) if re.fullmatch(r'[0-9]{1,9}', i) else None, planned_quantity=q, remarks=r)
                               for i, q, r in zip(request.form.getlist('work_item_id'), request.form.getlist('planned_quantity'), request.form.getlist('line_remarks'))]
             order['crew'] = []
+            order['brigade_ids'] = [int(b) for b in request.form.getlist('brigade_id') if re.fullmatch(r'[0-9]{1,9}', b)]
             for index in request.form.getlist('crew_row'):
                 if not re.fullmatch(r'[0-9]{1,6}', index):
                     continue
@@ -102,7 +105,8 @@ def edit(order_id=None):
     return render_template('work_order_form.html', order=order, error=error, available_items=items,
                            item_map={i['id']: i for i in items}, plan_version=version,
                            buildings=repo.work.list_buildings(include_archived=False), floors=repo.work.list_floors(include_archived=False),
-                           contractors=repo.people.list_contractors(), employees=repo.people.list_employees(), specialties=repo.people.list_specialties(),
+                           contractors=repo.people.list_contractors(), employees=repo.people.list_employees(as_of=order['shift_date']), specialties=repo.people.list_specialties(),
+                           permanent_brigades=BrigadeRepository(get_db(),current_project_id()).list(active_only=True,as_of=order['shift_date']),
                            elements=sorted({i['element'] for i in items}), work_types=sorted({i['work_type'] for i in items})), 400 if error else 200
 
 
