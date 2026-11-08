@@ -23,7 +23,15 @@ EXAMPLE=[['Иванов Иван Иванович','1','Каменщик'],['П�
 
 def book(rows=None,headers=HEADERS,names=None):
     names=names or ['Работники']
-    return pack_workbook(names,[sheet(list(headers),EXAMPLE if rows is None else rows,exact_column=False,text_columns=(2,)) for _ in names])
+    payload=pack_workbook(names,[sheet(list(headers),EXAMPLE if rows is None else rows,exact_column=False,text_columns=(2,)) for _ in names])
+    # Tests comparing file digests must regenerate the same file, including ZIP
+    # metadata. Production XLSX timestamps are intentionally left unchanged.
+    output=BytesIO()
+    with ZipFile(BytesIO(payload)) as source,ZipFile(output,'w',ZIP_DEFLATED) as target:
+        for entry in source.infolist():
+            entry.date_time=(2000,1,1,0,0,0)
+            target.writestr(entry,source.read(entry.filename))
+    return output.getvalue()
 
 
 def edit_zip(payload,path,transform):

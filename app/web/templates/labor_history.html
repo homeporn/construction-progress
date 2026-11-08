@@ -1,0 +1,4 @@
+{% extends "labor_base.html" %}
+{% block labor_content %}
+<section class="panel"><h2>История распределений и назначений</h2><div class="table-scroll"><table><thead><tr><th>Операция</th><th>Дата регистрации (UTC)</th><th>Действие</th><th>Причина</th></tr></thead><tbody>{% for row in history_rows %}<tr><td>{{ row.id }}</td><td>{{ row.recorded_at }}</td><td>{{ 'Распределение часов' if row.kind=='hours' else 'Назначение объёма' }}</td><td>{{ row.reason or '—' }}</td></tr>{% else %}<tr><td colspan="4" class="empty-cell">Операций пока нет.</td></tr>{% endfor %}</tbody></table></div><nav class="pagination" aria-label="Страницы истории">{% if page>1 %}<a href="{{ url_for('labor.history',page=page-1,**query) }}">← Предыдущая</a>{% endif %}<span>Страница {{ page }}</span>{% if has_next %}<a href="{{ url_for('labor.history',page=page+1,**query) }}">Следующая →</a>{% endif %}</nav></section>
+{% endblock %}

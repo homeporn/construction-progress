@@ -1,0 +1,30 @@
+........................................................................ [  8%]
+........................................................................ [ 17%]
+........................................................................ [ 26%]
+........................................................................ [ 34%]
+................................................................F....... [ 43%]
+........................................................................ [ 52%]
+........................................................................ [ 60%]
+........................................................................ [ 69%]
+........................................................................ [ 78%]
+........................................................................ [ 86%]
+........................................................................ [ 95%]
+.....................................                                    [100%]
+=================================== FAILURES ===================================
+__ test_saved_mapping_links_same_canonical_employee_on_another_shared_project __
+
+db = <sqlite3.Connection object at 0x7f0342ebed40>
+personnel = {'brigades': <app.repositories.brigade_repository.BrigadeRepository object at 0x7f0342e4b3b0>, 'contractor': 1, 'people': <app.repositories.personnel_repository.PersonnelRepository object at 0x7f03419a3700>, 'specialty': 1}
+
+    def test_saved_mapping_links_same_canonical_employee_on_another_shared_project(db,personnel):
+        s=personnel;service,sid=uploaded(db,s);preview(service,sid);result=commit(service,sid)
+        other=ProjectRepository(db).create_project('Другой','OTHER');service.people.share_contractor(s['contractor'],other)
+        target=PersonnelImportService(db,other);new=target.start(s['contractor'],DATE);target.upload(new,book(),'workers.xlsx',revision=1)
+>       assert all(r['decision']=='link' for r in target.rows(new))
+E       assert False
+E        +  where False = all(<generator object test_saved_mapping_links_same_canonical_employee_on_another_shared_project.<locals>.<genexpr> at 0x7f0341a23920>)
+
+tests/test_personnel_import.py:291: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_personnel_import.py::test_saved_mapping_links_same_canonical_employee_on_another_shared_project
+1 failed, 828 passed in 134.80s (0:02:14)

@@ -1,0 +1,22 @@
+{
+  "status": "build_kit_only_windows_exe_not_built",
+  "windows_environment_available": false,
+  "native_windows_smoke_performed": false,
+  "tests_before": {
+    "passed": 829,
+    "failed": 0,
+    "seconds": 95.58
+  },
+  "tests_after": {
+    "passed": 857,
+    "failed": 0,
+    "skipped": 7,
+    "seconds": 98.97
+  },
+  "skips": "Sandbox forbids real loopback sockets; Windows tests remain required",
+  "changed_baseline_source_files": [],
+  "original_db_sha256": "10f7b9964447ec33eb9d4865ef38b52384f606174217c1304d420510a55dc036",
+  "original_db_mtime_preserved": true,
+  "pushed": false,
+  "github_actions_created_or_run": false
+}

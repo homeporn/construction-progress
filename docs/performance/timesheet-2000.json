@@ -1,0 +1,61 @@
+{
+  "profile": "tab2000",
+  "db_bytes": 12144640,
+  "python": "3.13.5 (main, Aug 10 2026, 12:06:59) [GCC 14.2.0]",
+  "sqlite": "3.46.1",
+  "platform": "Linux-6.18.55-x86_64-with-glibc2.41",
+  "cpu_count": 3,
+  "ram_bytes": 10452471808,
+  "cold_app_start_seconds": 0.10645167899201624,
+  "results": {
+    "timesheet": {
+      "seconds": {
+        "mean": 2.0572194460008175,
+        "median": 2.040284689006512,
+        "p95": 2.3738835399999516,
+        "maximum": 2.3738835399999516
+      },
+      "samples": [
+        1.9677981229906436,
+        2.310667290992569,
+        1.8345578849985031,
+        1.7978029920050176,
+        2.050238818002981,
+        2.030330560010043,
+        1.9057846020004945,
+        2.180026138012181,
+        2.1211045109957922,
+        2.3738835399999516
+      ],
+      "repeats": 10,
+      "exception_reason": null,
+      "sql": {
+        "mean": 3522,
+        "median": 3522.0,
+        "p95": 3522,
+        "maximum": 3522
+      },
+      "bytes": {
+        "mean": 127815,
+        "median": 127815.0,
+        "p95": 127815,
+        "maximum": 127815
+      },
+      "cold_operation_seconds": 2.059686847991543,
+      "process_peak_rss_bytes": 110653440
+    }
+  },
+  "controls": {
+    "physical": "0.70833333333333333333333333333333333333333333333333",
+    "confirmed": "0.33333333333333333333333333333333333333333333333333",
+    "hours": "480000.000000000"
+  },
+  "explain": [
+    [
+      3,
+      0,
+      0,
+      "SEARCH fact_events USING INDEX idx_fact_events_slice (work_item_id=? AND work_date<?)"
+    ]
+  ]
+}

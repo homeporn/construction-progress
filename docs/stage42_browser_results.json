@@ -1,0 +1,33 @@
+{
+  "stage": "4.2",
+  "environment": "Linux / Chromium",
+  "macos_safari_tested": false,
+  "viewport": [
+    1366,
+    768
+  ],
+  "narrow_viewport": [
+    390,
+    844
+  ],
+  "checks": [
+    "Seven navigation groups and global project switch",
+    "Menu expansion and sidebar collapse survive reload in session",
+    "October 2026 draft contains 15 workers and no attendance/hours",
+    "Historical brigade roster: selected 7/8, preview writes no hours, confirmation writes 56h",
+    "Individual cell edit and sickness code: 54 worked hours, eighth worker has absence",
+    "Local XLSX download: 3 sheets, stable IDs, numeric 54h, frozen panes, no formulas",
+    "Submit and approve; approved matrix has no editing controls",
+    "Correction V2 changes current total to 52h; approved V1 remains 54h",
+    "XLSX upload, persisted preview, explicit apply and repeated POST: exactly 4.5h once",
+    "Original approved version remains selectable and audit history visible",
+    "390px screen: compact sidebar, drawer toggle/Escape and contained horizontal table scrolling",
+    "Project switch resets workspace; direct foreign timesheet URL is rejected",
+    "Construction progress remains 60%/45%, independent manual fact/confirmation unchanged, integrity/FKs valid"
+  ],
+  "javascript_errors": [],
+  "unexpected_http_errors": [],
+  "external_requests": [],
+  "completed_at": "2026-10-20T21:32:26.828221Z",
+  "passed": true
+}

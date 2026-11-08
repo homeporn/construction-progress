@@ -1,0 +1,70 @@
+{
+  "status": "partial_stopped_by_user_request",
+  "git_head": "4a407131c5ff1a7a542d25decb533755a0263704",
+  "baseline_archive_sha256": "e927cb7cea81eac47212f8bc0c1faa2a69485bb733cb45da80d71971a2dc8caa",
+  "preservation": {
+    "unchanged": true,
+    "sha256": "10f7b9964447ec33eb9d4865ef38b52384f606174217c1304d420510a55dc036",
+    "integrity": "ok",
+    "foreign_key_errors": [],
+    "applied_migrations": [
+      "001_initial.sql",
+      "002_replace_guards.sql",
+      "003_web_workflow.sql",
+      "004_projects.sql"
+    ],
+    "migrations_001_010_equal": true
+  },
+  "changed_app_files": [
+    "app/repositories/event_repository.py",
+    "app/services/analytics_service.py",
+    "app/web/__init__.py",
+    "app/web/pagination.py",
+    "app/web/routes/analytics.py",
+    "app/web/routes/events.py",
+    "app/web/routes/personnel_management.py",
+    "app/web/routes/timesheets.py",
+    "app/web/routes/volumes.py",
+    "app/web/static/js/timesheets.js",
+    "app/web/templates/_pagination.html",
+    "app/web/templates/base.html"
+  ],
+  "equivalence": {
+    "small": {
+      "count": 17,
+      "differences": []
+    },
+    "medium": {
+      "count": 47,
+      "differences": []
+    },
+    "large": {
+      "count": 77,
+      "differences": []
+    }
+  },
+  "test_status": {
+    "initial_passed": 823,
+    "initial_failed": 0,
+    "intermediate_passed": 828,
+    "latest_full_passed": 828,
+    "latest_full_failed": 1,
+    "after_fixture_fix_personnel_import_passed": 49,
+    "final_full_after_fixture_fix_run": false
+  },
+  "source_file_sha256": {
+    "app/repositories/event_repository.py": "9347baf8a80b684f966dac5ad83a13a69b2b02988a59d17c729d5e8610bb0bfa",
+    "app/services/analytics_service.py": "f9ef6d1d03b1799b7e630b09643b2c936a435791d9efae2864bb9883bc9f5554",
+    "app/web/__init__.py": "b63ea23b0c88c181a1bdac44cca37bb51dd636919f1162e70017ab6bf18ebeef",
+    "app/web/pagination.py": "146f7bbfd1a103a5db048b94e92394959cf8ee76a2360c9a2248c4107358ad08",
+    "app/web/routes/analytics.py": "498799e7d890e1ef6c56fdde124c6cd22b187e9572c5f86370f7fa1811b73834",
+    "app/web/routes/events.py": "9cb005aa6843e3425243287aa984158940c55cb435552f3b47d4c321d0005373",
+    "app/web/routes/personnel_management.py": "8da4f7a7fa0addd6237dc3e8852b701b82dea33fbe99f83aa52b0c6b8d4f7025",
+    "app/web/routes/timesheets.py": "9e146dce77caaa3322a27ac6dc334987912d862c36e373748ebf49e923413d7c",
+    "app/web/routes/volumes.py": "ff5e7034f6b2e675f1d5eb043c4aeaef300930f827c6bedf86d4d3ed10f06ed7",
+    "app/web/static/js/timesheets.js": "164034fb3eb25f003aa4ea362beff690094d23971bd676826d7a47bd7d20d685",
+    "app/web/templates/_pagination.html": "7ca47bbdd5b7d22cde9bbec83cdbbf5714fa5b3132419b15e7c3806259efd8d3",
+    "app/web/templates/base.html": "b34f34f00d7bd0b962cb2162c69502e69c618b354a993eeeee4750aa1469c497"
+  },
+  "test_fixture_sha256": "243bbfc3d5d7faec77c4916253d1082540395aae0442fe606ae031991efb5e5d"
+}

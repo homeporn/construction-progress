@@ -1,0 +1,3 @@
+# Windows runtime; the shared macOS requirements remain unchanged.
+-r web.txt
+waitress==3.0.2

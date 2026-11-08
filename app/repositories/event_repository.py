@@ -106,7 +106,7 @@ class EventRepository:
                 self._validate_timeline(item_id, work_order_line_id=work_order_line_id)
             return cursor.lastrowid
 
-    def list_events(self, kind, *, work_item_id=None, report_date=None, knowledge_cutoff=None):
+    def list_events(self, kind, *, work_item_id=None, report_date=None, knowledge_cutoff=None, filters=None, limit=None, offset=0, count=False):
         if kind not in ("fact", "confirmation"):
             raise ValueError("Unknown event journal")
         table = "fact_events" if kind == "fact" else "confirmation_events"
@@ -114,17 +114,30 @@ class EventRepository:
         linked = self._supports_order_links()
         order_fields = 'o.order_number,o.shift_date AS order_shift_date,o.id AS work_order_id ' if linked else 'NULL AS order_number,NULL AS order_shift_date,NULL AS work_order_id '
         order_joins = 'LEFT JOIN work_order_lines l ON l.id=e.work_order_line_id LEFT JOIN work_orders o ON o.id=l.work_order_id ' if linked else ''
-        return self.db.execute((
-            "SELECT e.*,e.{} AS business_date,c.code,c.name,c.element,c.work_type,"
-            "b.name AS building_name,f.floor_code,w.discipline,w.building_id,w.floor_id,"
-            + order_fields +
-            "FROM {} e JOIN work_items w ON w.id=e.work_item_id "
-            "JOIN work_catalog c ON c.id=w.catalog_id JOIN buildings b ON b.id=w.building_id "
-            "JOIN floors f ON f.id=w.floor_id " + order_joins + "WHERE b.project_id=? AND (? IS NULL OR e.work_item_id=?) "
-            "AND (? IS NULL OR e.{}<=?) AND (? IS NULL OR e.recorded_at<=?) "
-            "ORDER BY e.recorded_at DESC,e.id DESC").format(date_column, table, date_column),
-            (self.project_id, work_item_id, work_item_id, report_date, day(report_date) if report_date else None,
-             knowledge_cutoff, instant(knowledge_cutoff) if knowledge_cutoff else None)).fetchall()
+        columns={"building_id":"w.building_id","floor_id":"w.floor_id","discipline":"w.discipline","element":"c.element","work_type":"c.work_type"}
+        values=[self.project_id];conditions=["b.project_id=?"]
+        for field,value in (filters or {}).items():
+            if field not in columns:raise ValidationError("Неизвестный фильтр журнала")
+            if value not in (None,""):conditions.append(columns[field]+"=?");values.append(value)
+        for field,value in (("e.work_item_id",work_item_id),("e."+date_column,day(report_date) if report_date else None),("e.recorded_at",instant(knowledge_cutoff) if knowledge_cutoff else None)):
+            if value is not None:conditions.append(field+("=?" if field=="e.work_item_id" else "<=?"));values.append(value)
+        joins=" FROM "+table+" e JOIN work_items w ON w.id=e.work_item_id JOIN work_catalog c ON c.id=w.catalog_id JOIN buildings b ON b.id=w.building_id JOIN floors f ON f.id=w.floor_id "
+        if count:return self.db.execute("SELECT COUNT(*)"+joins+" WHERE "+" AND ".join(conditions),values).fetchone()[0]
+        query="SELECT e.*,e."+date_column+" AS business_date,c.code,c.name,c.element,c.work_type,b.name AS building_name,f.floor_code,w.discipline,w.building_id,w.floor_id,"+order_fields+joins+order_joins+" WHERE "+" AND ".join(conditions)+" ORDER BY e.recorded_at DESC,e.id DESC"
+        if limit is not None:
+            if not isinstance(limit,int) or not 1<=limit<=100 or not isinstance(offset,int) or offset<0:raise ValidationError("Некорректная страница журнала")
+            query+=" LIMIT ? OFFSET ?";values.extend([limit,offset])
+        return self.db.execute(query,values).fetchall()
+
+    def latest_recorded_at(self, item_ids, report_date, knowledge_cutoff):
+        """Metadata only; IDs come from the already scoped report selection."""
+        ids=sorted(set(item_ids));latest=None
+        for start in range(0,len(ids),900):
+            batch=ids[start:start+900]
+            for table,column in (("fact_events","work_date"),("confirmation_events","confirmed_date")):
+                value=self.db.execute("SELECT MAX(e.recorded_at) FROM "+table+" e JOIN work_items w ON w.id=e.work_item_id JOIN buildings b ON b.id=w.building_id WHERE b.project_id=? AND e.work_item_id IN ("+','.join('?' for _ in batch)+") AND e."+column+"<=? AND e.recorded_at<=?",[self.project_id]+batch+[day(report_date),instant(knowledge_cutoff)]).fetchone()[0]
+                if value is not None and (latest is None or value>latest):latest=value
+        return latest
 
     def cumulative_quantities(self, kind, report_date, knowledge_cutoff, *, discipline=None, work_item_id=None, work_order_line_id=None):
         """Exact shared journal projection; keys also record zero-net event histories."""

@@ -1,0 +1,56 @@
+{
+  "profile": "medium",
+  "counts": {
+    "projects": 3,
+    "buildings": 10,
+    "work_items": 10000,
+    "fact_events": 50000,
+    "confirmation_events": 50000,
+    "employees": 500,
+    "timesheet_entries": 15000
+  },
+  "database_bytes": 71643136,
+  "selected_project": 1,
+  "warmups": 2,
+  "repeats": 10,
+  "mean_seconds": 1.1804768215995864,
+  "p95_seconds": 1.3167112890005228,
+  "max_seconds": 1.3167112890005228,
+  "sql_queries": [
+    14,
+    14,
+    14,
+    14,
+    14,
+    14,
+    14,
+    14,
+    14,
+    14
+  ],
+  "peak_process_mib": 115.2109375,
+  "allocation_seconds": 0.0030473679944407195,
+  "physical_progress_hash_preserved": true,
+  "correction_query_plan": [
+    [
+      2,
+      0,
+      0,
+      "SEARCH fact_events USING COVERING INDEX labor_fact_correction_lookup (correction_of_id=?)"
+    ]
+  ],
+  "samples": [
+    1.010152240000025,
+    1.2853786279956694,
+    1.2553407960003824,
+    1.3167112890005228,
+    1.2633826780001982,
+    1.0857709269985207,
+    1.0076589160016738,
+    1.1761950180007261,
+    1.2694590620012605,
+    1.1347186619968852
+  ],
+  "service_sha256": "fa6155fb6c693d4b4225d617a72f7ffe0be9906b709819b71644d6295e0a13e2",
+  "note": "Final service including daily normative dynamics; same synthetic database, one analytical hour allocation, shared Linux CPU during regression. Not macOS timing."
+}

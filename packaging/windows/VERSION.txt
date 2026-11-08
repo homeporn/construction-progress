@@ -1,0 +1,4 @@
+Construction Progress W1.0
+Windows Portable x64 / schema 010
+Includes the current uncommitted 4.2 and partial 4.2.1 working-copy changes.
+See BUILD_INFO.json for the actual build environment.

@@ -1,0 +1,29 @@
+{% extends "base.html" %}
+{% block title %}{{ tabs[tab] }}{% endblock %}
+{% block heading %}{{ tabs[tab] }}{% endblock %}
+{% block subtitle %}Утверждённое рабочее время, исполнители объёмов и фактическая выработка{% endblock %}
+{% block heading_action %}<a class="button secondary" href="{{ url_for('labor.export', **query) }}">Скачать Excel</a>{% endblock %}
+{% block content %}
+<nav class="tabs" aria-label="Производительность">{% for key,label in tabs.items() %}<a href="{{ url_for('labor.' + key, **query) }}" {% if key==tab %}class="active" aria-current="page"{% endif %}>{{ label }}</a>{% endfor %}</nav>
+<section class="panel"><h2>Параметры отчёта</h2><form method="get" class="filter-form">
+  <label>Начало периода<input type="date" name="start_date" value="{{ start_date }}" required></label>
+  <label>Конец периода<input type="date" name="end_date" value="{{ end_date }}" required></label>
+  <label>Направление<select name="discipline"><option value="CONSTRUCTION" {% if direction=='CONSTRUCTION' %}selected{% endif %}>СМР</option><option value="DESIGN" {% if direction=='DESIGN' %}selected{% endif %}>Проектирование</option></select></label>
+  <label>Объёмы<select name="mode"><option value="actual" {% if mode=='actual' %}selected{% endif %}>Фактические</option><option value="confirmed" {% if mode=='confirmed' %}selected{% endif %}>Подтверждённые</option></select></label>
+  <label>Корпус<select name="building_id"><option value="">Все корпуса</option>{% for row in filter_buildings %}<option value="{{ row.id }}" {% if filters.building_id==row.id %}selected{% endif %}>{{ row.name }}</option>{% endfor %}</select></label>
+  <label>Этаж<select name="floor_id"><option value="">Все этажи</option>{% for row in floors %}<option value="{{ row.id }}" {% if filters.floor_id==row.id %}selected{% endif %}>{{ row.building_name }} · {{ row.floor_code }}</option>{% endfor %}</select></label>
+  <label>Код работы<select name="catalog_id"><option value="">Все работы</option>{% for row in catalog %}<option value="{{ row.id }}" {% if filters.catalog_id==row.id %}selected{% endif %}>{{ row.code }} · {{ row.name }}</option>{% endfor %}</select></label>
+  <label>Конструктив<input name="element" value="{{ filters.element }}" maxlength="200"></label>
+  <label>Подрядчик<select name="contractor_id"><option value="">Все подрядчики</option>{% for row in contractors %}<option value="{{ row.id }}" {% if filters.contractor_id==row.id %}selected{% endif %}>{{ row.name }}</option>{% endfor %}</select></label>
+  <label>Бригада<select name="brigade_id"><option value="">Все бригады</option>{% for row in brigades %}<option value="{{ row.id }}" {% if filters.brigade_id==row.id %}selected{% endif %}>{{ row.contractor_name }} · {{ row.number }}</option>{% endfor %}</select></label>
+  <label>Версия норматива<select name="plan_version_id"><option value="">На дату события</option>{% for row in versions %}<option value="{{ row.id }}" {% if plan_version_id==row.id %}selected{% endif %}>Версия {{ row.version_no }}</option>{% endfor %}</select></label>
+  <label>Отсечение знаний (UTC)<input name="knowledge_cutoff" value="{{ knowledge_cutoff }}" placeholder="2026-10-31T18:00:00Z" maxlength="40"></label>
+  <button type="submit">Применить</button><a href="{{ url_for('labor.' + tab) }}">Сбросить</a>
+</form><p class="help">Период включительно. Данные известны на {{ report.cutoff }}. Средняя численность рассчитана по всем календарным дням периода.</p></section>
+{% if read_only %}<div class="notice" role="status">Исторический срез доступен только для чтения. Для распределения откройте текущие данные без отсечения знаний.</div>{% endif %}
+{% if report.summary.conflict_count %}<div class="notice error" role="status">Обнаружены конфликты: {{ report.summary.conflict_count }}. Конфликтные группы исключены из окончательных показателей; уточните распределения или исполнителей объёмов.</div>{% endif %}
+{% if mode=='confirmed' %}<div class="notice">Подтверждённый объём не определяет исполнителя. При отсутствии прямой связи исполнитель и его выработка недоступны.</div>{% endif %}
+{% if report.warnings %}<details class="panel"><summary>Пояснения к данным ({{ report.warnings|length }})</summary><ul>{% for warning in report.warnings %}<li>{{ warning }}</li>{% endfor %}</ul></details>{% endif %}
+{% block labor_content %}{% endblock %}
+{% endblock %}
+{% block scripts %}<link rel="stylesheet" href="{{ url_for('static', filename='css/labor.css') }}">{% endblock %}

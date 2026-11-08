@@ -1,0 +1,30 @@
+{
+  "marker": "cp421-fresh-v1",
+  "profile": "small",
+  "seed": 421,
+  "counts": {
+    "projects": 1,
+    "buildings": 3,
+    "work_items": 1000,
+    "fact_events": 3000,
+    "confirmation_events": 2000,
+    "employees": 100,
+    "timesheet_entries": 3000
+  },
+  "refs": [
+    {
+      "project_id": 1,
+      "plan_id": 2,
+      "timesheet_id": 1,
+      "contractor_id": 1,
+      "employee_id": 1,
+      "work_item_id": 2,
+      "group_id": 1,
+      "building_id": 1
+    }
+  ],
+  "report_date": "2026-11-30",
+  "knowledge_cutoff": "2026-12-01T00:00:00Z",
+  "bytes": 4857856,
+  "generation_seconds": 0.4964699130068766
+}

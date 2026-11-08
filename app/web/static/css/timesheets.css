@@ -1,0 +1,39 @@
+.ts-actions,.ts-context,.ts-context form,.ts-bulk-filters,.ts-state-form { display:flex; align-items:end; flex-wrap:wrap; gap:12px; }
+.ts-context { align-items:center; justify-content:space-between; }
+.ts-context > div { display:flex; align-items:center; flex-wrap:wrap; gap:8px; }
+.ts-context > p { flex-basis:100%; margin:0; }
+.ts-context form label,.ts-state-form label,.ts-bulk-filters label { display:flex; flex-direction:column; gap:6px; }
+.ts-state-form { margin:14px 0; }
+.ts-state-form label { flex:1 1 260px; }
+.ts-matrix-panel { padding:0; }
+.ts-matrix-panel .panel-heading { padding:16px 20px; margin:0; }
+.ts-matrix-scroll { max-height:560px; overflow:auto; }
+.ts-matrix { border-collapse:separate; border-spacing:0; font-size:12px; min-width:1730px; }
+.ts-matrix th,.ts-matrix td { padding:6px 5px; border-right:1px solid #e6eaf0; border-bottom:1px solid #e6eaf0; vertical-align:middle; }
+.ts-matrix thead th { position:sticky; top:0; z-index:3; background:#f3f6fa; text-align:center; }
+.ts-matrix .ts-person { position:sticky; left:0; z-index:2; background:#fff; min-width:205px; max-width:230px; white-space:normal; }
+.ts-matrix .ts-brigade { position:sticky; left:205px; z-index:2; background:#fff; min-width:70px; max-width:70px; text-align:center; }
+.ts-matrix thead .ts-person,.ts-matrix thead .ts-brigade { z-index:4; background:#f3f6fa; }
+.ts-matrix .ts-day { min-width:39px; max-width:39px; padding:0; text-align:center; }
+.ts-matrix th.ts-day { padding:9px 2px; }
+.ts-matrix .ts-weekend { background:#f1f5fa; }
+.ts-matrix .ts-day > strong,.ts-matrix .ts-day > small { display:block; }
+.ts-matrix small { font-size:10px; margin-top:4px; color:#637186; }
+.ts-cell { display:block; width:100%; min-height:49px; padding:5px 2px; border:0; background:transparent; color:inherit; font:inherit; cursor:pointer; border-radius:0; box-shadow:none; }
+.ts-cell:hover,.ts-cell:focus-visible { background:#dbeafe; color:#173b62; outline:2px solid #3b82c4; outline-offset:-2px; }
+.ts-cell strong,.ts-cell small { display:block; }
+.ts-total { font-weight:700; }
+.ts-employee-list { display:grid; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); gap:8px 16px; max-height:270px; overflow:auto; margin:12px 0; }
+.ts-employee-list label { display:flex; align-items:center; gap:8px; font-size:13px; font-weight:400; }
+.ts-employee-list input[type=checkbox],.ts-preview-form input[type=checkbox] { width:auto; min-height:0; }
+.ts-bulk-form fieldset { border:1px solid #dbe2eb; margin:18px 0; border-radius:6px; }
+.ts-bulk-form .form-grid { margin:16px 0; }
+.ts-preview-form { display:flex; flex-direction:column; align-items:start; gap:14px; margin:20px 0; }
+.ts-status.ts-draft { background:#e9eff6; color:#33485f; }
+.ts-status.ts-submitted { background:#fff3ce; color:#755900; }
+.ts-status.ts-approved { background:#e0f1e8; color:#206648; }
+.ts-status.ts-cancelled { background:#f4e4e7; color:#8b3d4b; }
+.ts-event-details { max-width:650px; white-space:normal; overflow-wrap:anywhere; font-size:12px; }
+details.panel > summary { cursor:pointer; font-weight:650; padding:4px 0; }
+.ts-matrix-scroll:focus-within { outline:1px solid #93b7d7; }
+@media(max-width:700px) { .ts-matrix-scroll { max-height:470px; } .ts-matrix .ts-person { min-width:160px; max-width:160px; } .ts-matrix .ts-brigade { left:160px; min-width:58px; } .ts-employee-list { grid-template-columns:1fr; } .ts-actions { width:100%; } }

@@ -62,7 +62,7 @@ def create_app(config=None):
     def local_request_guard():
         # Only the local import wizard accepts larger bodies. Ordinary edit
         # forms retain their original 128 KiB ceiling.
-        if request.endpoint == "personnel_import.wizard":
+        if request.endpoint in ("personnel_import.wizard", "timesheets.import_data"):
             request.max_content_length = 5 * 1024 * 1024 + 64 * 1024
             request.max_form_memory_size = 5 * 1024 * 1024
         expected = app.config["LOCAL_ORIGIN"]
@@ -128,7 +128,7 @@ def create_app(config=None):
         message = str(error) if isinstance(error, InputError) else translate_error(str(error))
         endpoint = {"projects": "projects.index", "personnel": "personnel.index", "work_orders": "work_orders.index", "buildings": "buildings.index", "catalog": "catalog.index", "volumes": "volumes.index",
                     "events": "events.confirmations" if request.path == "/confirmations" else "events.facts",
-                    "progress": "progress.index"}.get(request.blueprint, "dashboard.index")
+                    "timesheets": "timesheets.index", "progress": "progress.index"}.get(request.blueprint, "dashboard.index")
         return render_template("error.html", message=message, back_url=url_for(endpoint)), 400
 
     @app.errorhandler(Exception)
@@ -144,9 +144,12 @@ def create_app(config=None):
             code, message = 500, "Не удалось выполнить операцию. Данные не сохранены. Проверьте доступность базы и повторите запрос."
         return render_template("error.html", message=message, back_url="/"), code
 
-    from .routes import dashboard, buildings, catalog, volumes, events, progress, projects, personnel, work_orders, analytics, personnel_management, personnel_import
-    for module in (dashboard, buildings, catalog, volumes, events, progress, projects, personnel, work_orders, analytics, personnel_management, personnel_import):
+    from .routes import dashboard, buildings, catalog, volumes, events, progress, projects, personnel, work_orders, analytics, personnel_management, personnel_import, navigation, timesheets, labor
+    for module in (dashboard, buildings, catalog, volumes, events, progress, projects, personnel, work_orders, analytics, personnel_management, personnel_import, navigation, timesheets, labor):
         app.register_blueprint(module.bp)
+
+    from .pagination import install
+    install(app)
 
     @app.post("/shutdown")
     def shutdown():

@@ -86,7 +86,7 @@ class AnalyticsService:
         return (automatic|includes)-excludes, warnings, bool(includes-compatible)
 
     def build(self, report_date=None, knowledge_cutoff=None, *, discipline='CONSTRUCTION', version_id=None,
-              filters=None, group_id=None, group_version=None, start_date=None, end_date=None, bucket='day'):
+              filters=None, group_id=None, group_version=None, start_date=None, end_date=None, bucket='day', include_series=True):
         cutoff=instant(knowledge_cutoff);report_date=day(report_date or cutoff[:10]);direction=Discipline(discipline)
         filters={k:v for k,v in (filters or {}).items() if v not in (None,'')}
         self._validate_filters(filters)
@@ -142,8 +142,7 @@ class AnalyticsService:
                 buildings.append(dict(b,progress=progress,gap=subtract(progress.actual_progress,progress.confirmed_progress)
                                       if progress.actual_progress is not None else None,count=len(related)))
             ids={r['id'] for r in rows}
-            latest=max((r['recorded_at'] for kind in ('fact','confirmation') for r in self.events.list_events(kind,report_date=report_date,knowledge_cutoff=cutoff)
-                        if r['work_item_id'] in ids),default=None)
+            latest=self.events.latest_recorded_at(ids,report_date,cutoff)
             data=dict(project=project,discipline=direction.value,version=dict(version) if version else None,report=report,
                 report_date=report_date,cutoff=cutoff,filters=filters,group=selected,group_views=[selected] if selected else group_views,group_id=group_id,
                 group_version=group_version,start_date=start,end_date=end,bucket=bucket,rows=rows,automatic=auto,buildings=buildings,
@@ -151,7 +150,7 @@ class AnalyticsService:
                 warnings=list(dict.fromkeys(warnings)),item_count=len(rows),actual_count=sum(r['actual']>0 for r in rows),
                 pending_count=sum(r['pending']>0 for r in rows),building_count=len(buildings),latest_event=latest,
                 gap=subtract(total.actual_progress,total.confirmed_progress) if total.actual_progress is not None else None)
-            data['series']=self._series(data,intervals)
+            data['series']=self._series(data,intervals) if include_series else None
             return data
 
     def _series(self,data,intervals):

@@ -1,0 +1,70 @@
+{
+  "marker": "cp421-fresh-v1",
+  "profile": "large",
+  "seed": 421,
+  "counts": {
+    "projects": 5,
+    "buildings": 30,
+    "work_items": 50000,
+    "fact_events": 250000,
+    "confirmation_events": 250000,
+    "employees": 2000,
+    "timesheet_entries": 60000
+  },
+  "refs": [
+    {
+      "project_id": 1,
+      "plan_id": 2,
+      "timesheet_id": 1,
+      "contractor_id": 1,
+      "employee_id": 1,
+      "work_item_id": 2,
+      "group_id": 1,
+      "building_id": 1
+    },
+    {
+      "project_id": 2,
+      "plan_id": 6,
+      "timesheet_id": 2,
+      "contractor_id": 2,
+      "employee_id": 401,
+      "work_item_id": 7,
+      "group_id": 2,
+      "building_id": 7
+    },
+    {
+      "project_id": 3,
+      "plan_id": 10,
+      "timesheet_id": 3,
+      "contractor_id": 3,
+      "employee_id": 801,
+      "work_item_id": 8,
+      "group_id": 3,
+      "building_id": 8
+    },
+    {
+      "project_id": 4,
+      "plan_id": 14,
+      "timesheet_id": 4,
+      "contractor_id": 4,
+      "employee_id": 1201,
+      "work_item_id": 4,
+      "group_id": 4,
+      "building_id": 4
+    },
+    {
+      "project_id": 5,
+      "plan_id": 18,
+      "timesheet_id": 5,
+      "contractor_id": 5,
+      "employee_id": 1601,
+      "work_item_id": 5,
+      "group_id": 5,
+      "building_id": 5
+    }
+  ],
+  "report_date": "2026-11-30",
+  "knowledge_cutoff": "2026-12-01T00:00:00Z",
+  "bytes": 354484224,
+  "generation_seconds": 26.913426063008956
+}

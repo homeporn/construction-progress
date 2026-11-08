@@ -1,0 +1,6 @@
+{% from '_macros.html' import csrf with context %}
+{% macro mutation(report, action, key) %}
+{{ csrf() }}<input type="hidden" name="version_id" value="{{ report.version.id }}"><input type="hidden" name="revision" value="{{ report.version.revision }}"><input type="hidden" name="operation_key" value="{{ key }}-{{ action }}"><input type="hidden" name="action" value="{{ action }}">
+{% endmacro %}
+{% macro code_select(codes, name='code') %}<select name="{{ name }}" required>{% for code in codes %}{% if code.is_active %}<option value="{{ code.code }}">{{ code.code }} · {{ code.name }}</option>{% endif %}{% endfor %}</select>{% endmacro %}
+{% macro status_label(status, labels) %}<span class="badge ts-status ts-{{ status }}">{{ labels.get(status, status) }}</span>{% endmacro %}

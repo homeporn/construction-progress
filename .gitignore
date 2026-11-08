@@ -12,3 +12,6 @@ data/*
 *.sqlite3-wal
 *.sqlite3-shm
 .DS_Store
+/build/
+/dist/
+.venv-windows-build/

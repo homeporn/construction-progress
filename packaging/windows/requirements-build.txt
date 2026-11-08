@@ -1,0 +1,13 @@
+# Run with CPython 3.13 x64 on Windows 10/11. Runtime dependencies are shared.
+-r ../../requirements/windows.txt
+PyInstaller==6.16.0
+pyinstaller-hooks-contrib==2025.9
+altgraph==0.17.4
+packaging==25.0
+pefile==2023.2.7 ; sys_platform == 'win32'
+pywin32-ctypes==0.2.3 ; sys_platform == 'win32'
+setuptools==80.9.0
+pytest==8.4.2
+iniconfig==2.1.0
+pluggy==1.6.0
+Pygments==2.19.2

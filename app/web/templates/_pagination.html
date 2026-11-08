@@ -1,0 +1,1 @@
+{% for p in pagination %}{% if p.pages>1 %}<nav aria-label="Страницы {{ p.key }}" class="panel"><span>Всего {{ p.count }} · страница {{ p.page }} из {{ p.pages }} · по 50 строк</span> {% for link in p.links %}<a href="{{ link.url }}" {% if p.page==link.number %}aria-current="page"{% endif %}>{{ link.number }}</a> {% endfor %}</nav>{% endif %}{% endfor %}

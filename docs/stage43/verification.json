@@ -1,0 +1,28 @@
+{
+  "status": "implemented_browser_acceptance_blocked",
+  "tests_before": {
+    "passed": 857,
+    "skipped": 7,
+    "failed": 0,
+    "seconds": 89.41
+  },
+  "tests_after": {
+    "passed": 933,
+    "skipped": 7,
+    "failed": 0,
+    "seconds": 104.77
+  },
+  "new_tests": 76,
+  "old_migrations_unchanged": true,
+  "kernel_unchanged": true,
+  "working_database_sha256": "10f7b9964447ec33eb9d4865ef38b52384f606174217c1304d420510a55dc036",
+  "working_database_unchanged": true,
+  "mtime_preserved": true,
+  "integrity": [
+    [
+      "ok"
+    ]
+  ],
+  "foreign_keys": [],
+  "github_push": false
+}

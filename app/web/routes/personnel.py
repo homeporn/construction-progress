@@ -17,8 +17,11 @@ def repository():
 
 @bp.get('/personnel')
 def index():
+    section = request.args.get('section', '')
+    if section not in ('', 'contractors', 'specialties'):
+        raise ValidationError('Неизвестный раздел справочников')
     repo = repository()
-    return render_template('personnel.html', contractors=repo.list_contractors(), employees=repo.list_employees(), specialties=repo.list_specialties())
+    return render_template('personnel.html', section=section, contractors=repo.list_contractors(), employees=repo.list_employees(), specialties=repo.list_specialties())
 
 
 @bp.route('/personnel/<kind>/new', methods=['GET', 'POST'])
@@ -52,7 +55,8 @@ def edit(kind, record_id=None):
             error = str(exc)
         else:
             flash('Запись справочника сохранена.', 'success')
-            return redirect(url_for('personnel_management.workers' if kind=='employees' else 'personnel.index'), code=303)
+            target = url_for('personnel_management.workers') if kind == 'employees' else url_for('personnel.index', section=kind)
+            return redirect(target, code=303)
     return render_template('personnel_form.html', kind=kind, kind_label=KINDS[kind], record=row, error=error,
                            contractors=repo.list_contractors(), specialties=repo.list_specialties(),
                            brigades=BrigadeRepository(get_db(),current_project_id()).list(active_only=True)), 400 if error else 200
@@ -67,4 +71,4 @@ def status(kind, record_id):
         raise ValidationError('Неизвестная операция справочника')
     repository().set_active(kind, record_id, action == 'restore')
     flash('Статус записи сохранён. История нарядов сохранена.', 'success')
-    return redirect(url_for('personnel.index'), code=303)
+    return redirect(url_for('personnel_management.workers') if kind == 'employees' else url_for('personnel.index', section='contractors'), code=303)

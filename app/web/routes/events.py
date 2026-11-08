@@ -88,8 +88,10 @@ def journal(kind, *, forced_line_id=None):
         selected = next((row for row in items if row["id"] == selected_id), None)
         if selected_id and selected is None:
             raise InputError("Выбранная работа недоступна в этом объекте, версии или срезе.")
-        rows = [row for row in event_repo.list_events(kind, report_date=context["report_date"], knowledge_cutoff=context["cutoff"])
-                if row["discipline"] == direction.value and all(value in (None, "") or row[key] == value for key, value in filters.items())]
+        event_page=integer(request.args,"event_page","Страница журнала",optional=True) or 1
+        journal_filters=dict(filters,discipline=direction.value)
+        rows=event_repo.list_events(kind,report_date=context["report_date"],knowledge_cutoff=context["cutoff"],filters=journal_filters,limit=50,offset=(event_page-1)*50)
+        event_count=event_repo.list_events(kind,report_date=context["report_date"],knowledge_cutoff=context["cutoff"],filters=journal_filters,count=True)
         query = {key: value for key, value in request.args.items() if key in
                  ("discipline", "version_id", "report_date", "knowledge_cutoff", "building_id", "floor_id", "element", "work_type")}
         context.update(confirmation=confirmation, items=items, events=rows, queue_rows=queue_rows,
@@ -102,6 +104,10 @@ def journal(kind, *, forced_line_id=None):
             context['order_choices'] = [c for c in context['order_choices'] if c['id'] == forced_line_id]
         if selected_line and not any(c['id'] == selected_line for c in context['order_choices']):
             raise InputError('Выбранная строка наряда недоступна для этого события')
+        from app.web.pagination import paginate
+        context["queue_rows"]=paginate(context["queue_rows"],"work_page")
+        context["events"]=paginate(context["events"],"event_page",total_count=event_count)
+        context["items"]=(paginate(context["items"],"position_page") if correction_mode else context["queue_rows"]) if selected is None else [selected]
         return render_template("events.html", **context)
 
 

@@ -9,7 +9,10 @@ bp = Blueprint("volumes", __name__)
 
 @bp.get("/volumes")
 def index():
-    return render_template("volumes.html", **work_context())
+    from app.web.pagination import paginate
+    data=work_context()
+    data["items"]=paginate(data["items"])
+    return render_template("volumes.html", **data)
 
 
 @bp.post("/volumes/items")

@@ -1,0 +1,74 @@
+{
+  "stage": "4.3",
+  "captured_at": "2026-11-08T19:47:54.162378+00:00",
+  "status": "blocked",
+  "environment": "Linux default execution sandbox",
+  "viewport": [
+    1366,
+    768
+  ],
+  "transport": "Chromium request interception to real Flask test_client over subprocess stdio; native TCP/WSGI transport not tested",
+  "launch_attempts": [
+    {
+      "args": [
+        "--no-sandbox",
+        "--disable-dev-shm-usage"
+      ],
+      "error": "BrowserType.launch: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /usr/bin/chromium --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-edgeupdater --disable-extensions --disable-features=AvoidUnnecessaryBeforeUnloadCheckSync,BoundaryEventDispatchTracksNodeRemoval,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,BlockOriginHeaderModificationOnRedirect,Translate,AutoDeElevate,OptimizationHints,msForceBrowserSignIn,msEdgeUpdateLaunchServicesPreferredVersion --enable-features=CDPScreenshotNewSurface --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --disable-updater-scheduler --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --disable-infobars --disable-search-engine-choice-screen --disable-sync --enable-unsafe-swiftshader --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --no-sandbox --disable-dev-shm-usage --user-data-dir=/tmp/playwright_chromiumdev_profile-I8c1Cu --remote-debugging-pipe --no-startup-window\n<launched> pid=3731\n[pid=3731][err] [3731:3731:1108/194755.185943:ERROR:third_party/crashpad/crashpad/util/linux/socket.cc:45] setsockopt: Operation not permitted (1)\nCall log:\n  - <launching> /usr/bin/chromium --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-edgeupdater --disable-extensions --disable-features=AvoidUnnecessaryBeforeUnloadCheckSync,BoundaryEventDispatchTracksNodeRemoval,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,BlockOriginHeaderModificationOnRedirect,Translate,AutoDeElevate,OptimizationHints,msForceBrowserSignIn,msEdgeUpdateLaunchServicesPreferredVersion --enable-features=CDPScreenshotNewSurface --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --disable-updater-scheduler --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --disable-infobars --disable-search-engine-choice-screen --disable-sync --enable-unsafe-swiftshader --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --no-sandbox --disable-dev-shm-usage --user-data-dir=/tmp/playwright_chromiumdev_profile-I8c1Cu --remote-debugging-pipe --no-startup-window\n  - <launched> pid=3731\n  - [pid=3731][err] [3731:3731:1108/194755.185943:ERROR:third_party/crashpad/crashpad/util/linux/socket.cc:45] setsockopt: Operation not permitted (1)\n  - [pid=3731] <gracefully close start>\n  - [pid=3731] <kill>\n  - [pid=3731] <will force kill>\n  - [pid=3731] <process did exit: exitCode=null, signal=SIGTRAP>\n  - [pid=3731] starting temporary directories cleanup\n  - [pid=3731] finished temporary directories cleanup\n  - [pid=3731] <gracefully close end>\n"
+    },
+    {
+      "args": [
+        "--no-sandbox",
+        "--disable-dev-shm-usage",
+        "--disable-crash-reporter",
+        "--disable-crashpad",
+        "--noerrdialogs",
+        "--no-zygote",
+        "--single-process"
+      ],
+      "error": "BrowserType.launch: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /usr/bin/chromium --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-edgeupdater --disable-extensions --disable-features=AvoidUnnecessaryBeforeUnloadCheckSync,BoundaryEventDispatchTracksNodeRemoval,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,BlockOriginHeaderModificationOnRedirect,Translate,AutoDeElevate,OptimizationHints,msForceBrowserSignIn,msEdgeUpdateLaunchServicesPreferredVersion --enable-features=CDPScreenshotNewSurface --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --disable-updater-scheduler --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --disable-infobars --disable-search-engine-choice-screen --disable-sync --enable-unsafe-swiftshader --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --no-sandbox --disable-dev-shm-usage --disable-crash-reporter --disable-crashpad --noerrdialogs --no-zygote --single-process --user-data-dir=/tmp/playwright_chromiumdev_profile-OuecwU --remote-debugging-pipe --no-startup-window\n<launched> pid=3745\n[pid=3745][err] [3745:3745:1108/194755.245198:ERROR:third_party/crashpad/crashpad/util/linux/socket.cc:45] setsockopt: Operation not permitted (1)\nCall log:\n  - <launching> /usr/bin/chromium --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-edgeupdater --disable-extensions --disable-features=AvoidUnnecessaryBeforeUnloadCheckSync,BoundaryEventDispatchTracksNodeRemoval,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,BlockOriginHeaderModificationOnRedirect,Translate,AutoDeElevate,OptimizationHints,msForceBrowserSignIn,msEdgeUpdateLaunchServicesPreferredVersion --enable-features=CDPScreenshotNewSurface --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --disable-updater-scheduler --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --disable-infobars --disable-search-engine-choice-screen --disable-sync --enable-unsafe-swiftshader --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --no-sandbox --disable-dev-shm-usage --disable-crash-reporter --disable-crashpad --noerrdialogs --no-zygote --single-process --user-data-dir=/tmp/playwright_chromiumdev_profile-OuecwU --remote-debugging-pipe --no-startup-window\n  - <launched> pid=3745\n  - [pid=3745][err] [3745:3745:1108/194755.245198:ERROR:third_party/crashpad/crashpad/util/linux/socket.cc:45] setsockopt: Operation not permitted (1)\n  - [pid=3745] <gracefully close start>\n  - [pid=3745] <kill>\n  - [pid=3745] <will force kill>\n  - [pid=3745] <process did exit: exitCode=null, signal=SIGTRAP>\n  - [pid=3745] starting temporary directories cleanup\n  - [pid=3745] finished temporary directories cleanup\n  - [pid=3745] <gracefully close end>\n"
+    }
+  ],
+  "checks": [],
+  "screenshots": [],
+  "javascript_errors": [],
+  "console_errors": [],
+  "unexpected_http_errors": [],
+  "external_requests": [],
+  "browser_page_created": false,
+  "browser_observation_status": "not_observed: no Chromium page created; empty error/request arrays do not establish browser acceptance",
+  "safari_tested": false,
+  "working_database_opened": false,
+  "backend_acceptance": {
+    "status": "passed",
+    "transport": "Flask test_client in process; no browser",
+    "checks": [
+      "Overview: approved 40h, allocated 0h, unallocated 40h before explicit allocation",
+      "Historical brigade roster shows all five Oct 1 members after worker 5 moved on Oct 2",
+      "Individual native-form route allocates 8h and does not invent volume attribution",
+      "Bulk preview writes nothing; explicit confirmation writes 32h once, replay stays 40h total",
+      "Explicit 100m² attribution: 40h, norm 0.5h/m², 50 normative h, output 2.5m²/h, norm output 2m²/h, 125% across all metric screens",
+      "Combined filters and frozen approved plan work; knowledge cutoff preserves pre-allocation history and removes mutation forms; history and confirmed mode render",
+      "XLSX attachment: seven sheets; exact numeric summary and work/contractor/brigade metrics equal service and rendered screen values; no formulas",
+      "Intentional negative routes: overcapacity rejected 400 and missing CSRF rejected 403; approved totals unchanged"
+    ],
+    "expected_http_errors": [
+      400,
+      403
+    ],
+    "numeric_fixture": {
+      "workers": 5,
+      "hours_per_worker": 8,
+      "quantity_m2": 100,
+      "labor_norm": "0.5",
+      "worked_hours": 40,
+      "allocated_hours": 40,
+      "normative_hours": 50,
+      "actual_output": "2.5",
+      "norm_output": "2",
+      "norm_ratio": "1.25"
+    },
+    "working_database_opened": false
+  },
+  "blocker": "Chromium exits before page creation: crashpad setsockopt returns EPERM (Operation not permitted), SIGTRAP in default execution sandbox. Both bounded launch variants failed. No screenshots or browser interaction claims are made."
+}

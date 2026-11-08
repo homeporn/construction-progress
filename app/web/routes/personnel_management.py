@@ -25,6 +25,8 @@ def workers():
     if state not in ('','active','archived'):raise ValidationError('Выберите статус работника')
     rows=people.list_employees(**filters)
     rows=[r for r in rows if not state or bool(r['is_active'])==(state=='active')]
+    from app.web.pagination import paginate
+    rows=paginate(rows)
     return render_template('personnel_workers.html',employees=rows,filters=dict(filters,state=state),
                            contractors=people.list_contractors(),specialties=people.list_specialties(),brigades=brigades.list())
 

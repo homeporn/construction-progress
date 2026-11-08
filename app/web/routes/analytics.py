@@ -17,7 +17,7 @@ TABS={'summary':'Сводка объекта','volumes':'Объёмы работ
       'deviations':'Отклонения','groups':'Аналитические группы','export':'Экспорт Excel'}
 
 
-def context():
+def context(*, include_series=True):
     data=request.args;db=get_db();project_id=current_project_id();work=WorkRepository(db,project_id)
     report_date,cutoff=report_dates(data);direction=discipline(data)
     supplied=integer(data,'project_id','Объект',optional=True)
@@ -29,7 +29,7 @@ def context():
         start_date=business_date(data,'start_date') if data.get('start_date') else None,end_date=business_date(data,'end_date') if data.get('end_date') else None,
         bucket=data.get('bucket','day'))
     if args['group_version'] and not args['group_id']:raise InputError('Для редакции состава выберите группу')
-    result=AnalyticsService(db,project_id).build(report_date,cutoff,**args)
+    result=AnalyticsService(db,project_id).build(report_date,cutoff,include_series=include_series,**args)
     deviation=data.get('deviation','all');result['deviations']=deviations(result['rows'],deviation)
     query=dict(discipline=direction.value,report_date=report_date,knowledge_cutoff=cutoff,start_date=result['start_date'],end_date=result['end_date'],bucket=result['bucket'],deviation=deviation)
     query.update({k:v for k,v in filters.items() if v not in (None,'')})
@@ -45,7 +45,11 @@ def context():
 @bp.get('/analytics/<tab>')
 def index(tab='summary'):
     if tab not in TABS:raise InputError('Неизвестный раздел аналитики')
-    data=context()
+    data=context(include_series=tab in ('dynamics','export'))
+    if tab in ('volumes','deviations'):
+        from app.web.pagination import paginate
+        data['rows']=paginate(data['rows'])
+        data['deviations']=paginate(data['deviations'],'deviation_page')
     norm_code=integer(request.args,'productivity_catalog_id','Код для выработки',optional=True) or data['filters'].get('catalog_id')
     selected=next((c for c in data['catalog'] if c['id']==norm_code),None)
     if norm_code and selected is None:raise InputError('Код для выработки не найден')

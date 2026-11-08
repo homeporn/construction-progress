@@ -1,0 +1,22 @@
+{% extends "labor_base.html" %}
+{% macro metrics(rows, entity=false) %}
+<div class="table-scroll"><table><thead><tr>{% if entity %}<th>Исполнитель</th>{% endif %}<th>Код / работа</th><th>Ед.</th><th>Объём</th><th>Чел.-ч</th><th>Нормативные чел.-ч</th><th>Фактическая выработка, ед./чел.-ч</th><th>Нормативная выработка, ед./чел.-ч</th><th>Выполнение нормы</th><th>Полнота</th></tr></thead><tbody>
+{% for row in rows %}<tr data-labor-code="{{ row.code }}">{% if entity %}<td>{{ row.entity_name or 'Исполнитель неизвестен' }}</td>{% endif %}<td>{{ row.code }}<small>{{ row.name }}</small></td><td>{{ row.unit }}</td><td>{{ row.quantity|number }}</td><td>{{ row.hours|number }}</td><td>{{ row.normative_hours|number }}</td><td>{{ row.actual_output|number }}</td><td>{{ row.norm_output|number }}</td><td>{{ row.norm_ratio|percent }}</td><td>{{ 'Полные данные' if row.complete else 'Неполные данные' }}</td></tr>
+{% else %}<tr><td colspan="{{ 11 if entity else 10 }}" class="empty-cell">Нет данных для выбранного периода и фильтров.</td></tr>{% endfor %}</tbody></table></div>
+{% endmacro %}
+{% block labor_content %}
+{% if tab=='overview' %}
+{% set summary=report.summary %}
+<div class="labor-kpis">
+  <section class="panel"><span class="eyebrow">ОТРАБОТАНО</span><strong data-worked-hours>{{ summary.worked_hours|number if summary.has_approved_time else 'Нет данных' }}</strong><span>чел.-ч из утверждённых табелей</span></section>
+  <section class="panel"><span class="eyebrow">РАСПРЕДЕЛЕНО</span><strong data-allocated-hours>{{ summary.allocated_hours|number }}</strong><span>чел.-ч по учётным позициям</span></section>
+  <section class="panel"><span class="eyebrow">НЕ РАСПРЕДЕЛЕНО</span><strong data-unallocated-hours>{{ summary.unallocated_hours|number if summary.has_approved_time else 'Нет данных' }}</strong><span>чел.-ч требуют распределения</span></section>
+  <section class="panel"><span class="eyebrow">НОРМАТИВНАЯ ТРУДОЁМКОСТЬ</span><strong>{{ summary.normative_hours|number }}</strong><span>чел.-ч выполненного объёма</span></section>
+  <section class="panel"><span class="eyebrow">УНИКАЛЬНЫХ РАБОТНИКОВ</span><strong>{{ summary.unique_workers|number }}</strong><span>по утверждённым явкам</span></section>
+  <section class="panel"><span class="eyebrow">СРЕДНЯЯ ЧИСЛЕННОСТЬ</span><strong>{{ summary.average_daily_workers|number }}</strong><span>за календарный день</span></section>
+</div>
+{% if not summary.has_approved_time %}<div class="notice">Нет утверждённых часов за выбранный период. Часы и достигнутая выработка недоступны до утверждения табеля.</div>{% endif %}
+<section class="panel"><h2>Часы и численность по дням</h2><div class="table-scroll"><table><thead><tr><th>Дата</th><th>Отработано, чел.-ч</th><th>Распределено, чел.-ч</th><th>Работников</th><th>Нормативная трудоёмкость, чел.-ч</th><th>Выполнение нормы</th></tr></thead><tbody>{% for row in dynamic_rows %}<tr><td>{{ row.date }}</td><td>{{ row.hours|number }}</td><td>{{ row.allocated_hours|number }}</td><td>{{ row.workers|number }}</td><td>{{ row.normative_hours|default(none)|number }}</td><td>{{ row.norm_ratio|default(none)|percent }}</td></tr>{% else %}<tr><td colspan="6" class="empty-cell">Нет данных</td></tr>{% endfor %}</tbody></table></div></section>
+<section class="panel"><h2>Как читать показатели</h2><p>Фактическая выработка — объём конкретного кода и единицы, делённый на распределённые чел.-ч. Нормативная выработка — обратная величина норматива. Разные виды работ и единицы не складываются в натуральную выработку.</p><p class="help">Часы учитывают только утверждённые явки. Назначение в бригаду и наряд не создают отработанное время. Неполная атрибуция объёмов, отсутствие норматива и конфликты отмечаются в детализации.</p></section>
+{% else %}<section class="panel"><h2>{{ tabs[tab] }}</h2><p class="help">Единицы и коды сравниваются отдельно. Прочерк означает отсутствие данных для показателя; неполные группы требуют проверки.</p>{{ metrics(metric_rows, tab!='works') }}</section>{% endif %}
+{% endblock %}
