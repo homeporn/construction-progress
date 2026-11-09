@@ -1,0 +1,83 @@
+{
+  "captured_at": "2026-11-09T14:44:21.828060+00:00",
+  "head": "dc113a6980bc5dc3b34fc8cf2ee2f4eb5702a2df",
+  "python": "3.13.5 (main, Aug 10 2026, 12:06:59) [GCC 14.2.0]",
+  "sqlite": "3.46.1",
+  "platform": "Linux-6.18.57-x86_64-with-glibc2.41",
+  "baseline_existing_changes": [
+    "README.md",
+    "app/database.py",
+    "app/repositories/work_order_repository.py",
+    "app/repositories/work_order_workflow_repository.py",
+    "app/web/navigation.py",
+    "app/web/routes/work_orders.py",
+    "app/web/static/js/work_orders.js",
+    "app/web/templates/_work_order_actions.html",
+    "app/web/templates/_work_order_progress.html",
+    "app/web/templates/work_order_detail.html",
+    "app/web/templates/work_order_form.html",
+    "app/web/templates/work_orders.html",
+    "tests/test_timesheet_migration.py",
+    "tests/test_work_order_flow.py",
+    "tests/test_work_order_flow_web.py"
+  ],
+  "prior_migrations_001_012_unchanged": true,
+  "primary_repositories_unchanged": true,
+  "calculation_engine_unchanged": true,
+  "timesheet_labor_payroll_unchanged": true,
+  "working_db_sha256": "10f7b9964447ec33eb9d4865ef38b52384f606174217c1304d420510a55dc036",
+  "working_db_mtime_ns": 1792249029104690559,
+  "working_db_unchanged": true,
+  "working_db_integrity": [
+    [
+      "ok"
+    ]
+  ],
+  "working_db_foreign_keys": [],
+  "working_db_applied_migrations": [
+    "001_initial.sql",
+    "002_replace_guards.sql",
+    "003_web_workflow.sql",
+    "004_projects.sql"
+  ],
+  "tests_before": {
+    "passed": 1041,
+    "skipped": 7,
+    "failed": 0,
+    "seconds": 141.94
+  },
+  "tests_after": {
+    "passed": 1128,
+    "skipped": 7,
+    "failed": 0,
+    "seconds": 171.58
+  },
+  "new_tests": 87,
+  "browser": "blocked before page creation; exactly one Chromium launch; no browser acceptance claim",
+  "backend_acceptance": "passed",
+  "sample_xlsx": {
+    "path": "docs/examples/stage45_work_order_control.xlsx",
+    "bytes": 25634,
+    "sha256": "f2411aee633984e08b04c66f1a7b783c6efc615bc198f8ee9267020dfaf893af",
+    "sheets": [
+      "01. Реестр",
+      "02. Контроль",
+      "03. Остатки",
+      "04. Переносы",
+      "05. Цепочки",
+      "06. Расхождения",
+      "07. Источники"
+    ]
+  },
+  "populated_migration_control": {
+    "from_schema": 12,
+    "to_schema": 13,
+    "payroll_rub": "2800",
+    "physical_actual": "0.6",
+    "physical_confirmed": "0.45",
+    "all_old_rows_preserved": true,
+    "verified_by": "tests/test_work_order_control_migration.py"
+  },
+  "git_push_performed": false,
+  "cloud_deployment_performed": false
+}

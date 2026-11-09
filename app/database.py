@@ -91,6 +91,12 @@ def migrate(db):
     elif existing and markers and (PROJECT_ROOT / "migrations/011_labor_productivity.sql").exists() and not db.execute(
             "SELECT 1 FROM schema_migrations WHERE name='011_labor_productivity.sql'").fetchone():
         backup_database(db, label="labor-productivity")
+    elif existing and markers and (PROJECT_ROOT / "migrations/012_payroll.sql").exists() and not db.execute(
+            "SELECT 1 FROM schema_migrations WHERE name='012_payroll.sql'").fetchone():
+        backup_database(db, label="payroll")
+    elif existing and markers and (PROJECT_ROOT / "migrations/013_work_order_control.sql").exists() and not db.execute(
+            "SELECT 1 FROM schema_migrations WHERE name='013_work_order_control.sql'").fetchone():
+        backup_database(db, label="work-order-control")
     db.execute("CREATE TABLE IF NOT EXISTS schema_migrations "
                "(name TEXT PRIMARY KEY, applied_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)")
     for path in sorted((PROJECT_ROOT / "migrations").glob("*.sql")):
@@ -110,9 +116,9 @@ def migrate(db):
             if db.execute("SELECT 1 FROM schema_migrations WHERE name=?", (path.name,)).fetchone():
                 db.commit()
                 continue
-            preserve_existing = rebuild or path.name in ("006_work_orders.sql", "007_work_order_events.sql", "008_analytics.sql", "010_timesheets.sql", "011_labor_productivity.sql")
+            preserve_existing = rebuild or path.name in ("006_work_orders.sql", "007_work_order_events.sql", "008_analytics.sql", "010_timesheets.sql", "011_labor_productivity.sql", "012_payroll.sql", "013_work_order_control.sql")
             original_columns = None
-            if path.name in ("007_work_order_events.sql", "008_analytics.sql", "009_personnel_import.sql", "010_timesheets.sql", "011_labor_productivity.sql"):
+            if path.name in ("007_work_order_events.sql", "008_analytics.sql", "009_personnel_import.sql", "010_timesheets.sql", "011_labor_productivity.sql", "012_payroll.sql", "013_work_order_control.sql"):
                 original_columns = {row[0]: [c[1] for c in db.execute('PRAGMA table_info("{}")'.format(row[0].replace('"', '""')))]
                                     for row in db.execute("SELECT name FROM sqlite_master WHERE type='table' "
                                                           "AND name NOT LIKE 'sqlite_%' AND name!='schema_migrations'")}

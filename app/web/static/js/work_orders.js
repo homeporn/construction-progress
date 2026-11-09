@@ -14,6 +14,7 @@
     row.querySelector("[data-remove-row]").addEventListener("click", function () { row.remove(); });
   }
   function bindLine(row) {
+    if (row.dataset.inherited === "1") return;
     var building = row.querySelector("[data-building]"), floor = row.querySelector("[data-floor]");
     var element = row.querySelector("[data-element]"), type = row.querySelector("[data-work-type]");
     var work = row.querySelector("[data-work-item]");
@@ -57,7 +58,8 @@
   form.querySelectorAll("[data-order-line]").forEach(bindLine);
   form.querySelectorAll("[data-crew-row]").forEach(bindCrew);
   var nextIndex = form.querySelectorAll("[data-crew-row]").length;
-  document.getElementById("add-order-line").addEventListener("click", function () {
+  var addLine = document.getElementById("add-order-line");
+  if (addLine) addLine.addEventListener("click", function () {
     var fragment = document.getElementById("order-line-template").content.cloneNode(true);
     var row = fragment.querySelector("[data-order-line]");
     document.getElementById("order-lines").appendChild(fragment); bindLine(row);

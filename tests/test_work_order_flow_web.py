@@ -86,24 +86,27 @@ def test_submit_review_close_and_print_show_only_linked_quantities(client,db,flo
     s=flow
     fact(s,'100');fact(s,'50',linked=False);confirm(s,'60');confirm(s,'40',linked=False)
     path='/work-orders/'+str(s['order'])
+    from test_work_order_flow import dispose_remaining
+    dispose_remaining(s)
     for target in ['submitted','accepted','closed']:
         assert post(client,path+'/workflow/'+target,workflow_data(s,target)).status_code==303
     html=get(client,path).get_data(as_text=True)
     assert 'Закрыт' in html and 'Общие по работе' in html and '20 м² перенесены' in html
     printed=get(client,path+'/print').get_data(as_text=True)
     assert re.findall(r'<td[^>]+data-order-actual[^>]*>(.*?)</td>',printed)==['100']
-    assert re.findall(r'<td[^>]+data-order-confirmed[^>]*>(.*?)</td>',printed)==['60']
+    assert re.findall(r'<td[^>]+data-order-confirmed[^>]*>(.*?)</td>',printed)==['100']
     assert 'Проверено' in printed and 'Проверка строки' in printed
     assert 'Снимок на момент закрытия' in printed
     assert db.execute('SELECT count(*) FROM fact_events').fetchone()[0]==2
-    assert db.execute('SELECT count(*) FROM confirmation_events').fetchone()[0]==2
+    assert db.execute('SELECT count(*) FROM confirmation_events').fetchone()[0]==3
 
 
 def test_historical_card_and_print_hide_future_workflow_and_events(client,flow):
     from app.time_utils import instant
     s=flow
     fact(s,'70');cutoff=instant();fact(s,'30');confirm(s,'60')
-    action(s,'submitted');action(s,'accepted');action(s,'closed',comment='Остаток переносится')
+    from test_work_order_flow import dispose_remaining
+    action(s,'submitted');dispose_remaining(s);action(s,'accepted');action(s,'closed',comment='Остаток явно списан')
     path='/work-orders/'+str(s['order'])
     response=get(client,path+'?knowledge_cutoff='+cutoff)
     assert response.status_code==200
@@ -138,8 +141,9 @@ def test_workflow_and_order_line_urls_reject_other_workspace(client,db,flow):
 
 def test_correction_form_inherits_closed_order_link(client,db,flow):
     s=flow
-    original=fact(s,'100')
-    action(s,'submitted');action(s,'accepted');action(s,'closed',comment='20 м² не выполнены')
+    original=fact(s,'100');fact(s,'40',linked=False)
+    from test_work_order_flow import dispose_remaining
+    action(s,'submitted');dispose_remaining(s);action(s,'accepted');action(s,'closed',comment='20 м² явно списаны')
     values=event_data(s,'-10',linked=False,correction_of_id=str(original),comment='Уточнение после закрытия')
     assert post(client,'/facts',values).status_code==303
     assert db.execute('SELECT work_order_line_id FROM fact_events ORDER BY id DESC').fetchone()[0]==s['line']
@@ -152,7 +156,8 @@ def test_historical_print_link_preserves_visible_cutoff(client,flow):
     from app.time_utils import instant
     s=flow
     fact(s,'70');cutoff=instant();fact(s,'30')
-    action(s,'submitted');action(s,'accepted');action(s,'closed',comment='20 м² не выполнены')
+    from test_work_order_flow import dispose_remaining
+    action(s,'submitted');dispose_remaining(s);action(s,'accepted');action(s,'closed',comment='20 м² явно списаны')
     path='/work-orders/'+str(s['order'])
     html=get(client,path+'?knowledge_cutoff='+cutoff).get_data(as_text=True)
     href=unescape(re.search(r'href="([^"]+)">Печатная форма</a>',html).group(1))

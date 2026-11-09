@@ -128,7 +128,7 @@ def create_app(config=None):
         message = str(error) if isinstance(error, InputError) else translate_error(str(error))
         endpoint = {"projects": "projects.index", "personnel": "personnel.index", "work_orders": "work_orders.index", "buildings": "buildings.index", "catalog": "catalog.index", "volumes": "volumes.index",
                     "events": "events.confirmations" if request.path == "/confirmations" else "events.facts",
-                    "timesheets": "timesheets.index", "progress": "progress.index"}.get(request.blueprint, "dashboard.index")
+                    "timesheets": "timesheets.index", "progress": "progress.index", "payroll": "payroll.overview"}.get(request.blueprint, "dashboard.index")
         return render_template("error.html", message=message, back_url=url_for(endpoint)), 400
 
     @app.errorhandler(Exception)
@@ -144,8 +144,8 @@ def create_app(config=None):
             code, message = 500, "Не удалось выполнить операцию. Данные не сохранены. Проверьте доступность базы и повторите запрос."
         return render_template("error.html", message=message, back_url="/"), code
 
-    from .routes import dashboard, buildings, catalog, volumes, events, progress, projects, personnel, work_orders, analytics, personnel_management, personnel_import, navigation, timesheets, labor
-    for module in (dashboard, buildings, catalog, volumes, events, progress, projects, personnel, work_orders, analytics, personnel_management, personnel_import, navigation, timesheets, labor):
+    from .routes import dashboard, buildings, catalog, volumes, events, progress, projects, personnel, work_orders, analytics, personnel_management, personnel_import, navigation, timesheets, labor, payroll
+    for module in (dashboard, buildings, catalog, volumes, events, progress, projects, personnel, work_orders, analytics, personnel_management, personnel_import, navigation, timesheets, labor, payroll):
         app.register_blueprint(module.bp)
 
     from .pagination import install

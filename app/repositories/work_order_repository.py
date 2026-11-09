@@ -125,47 +125,64 @@ class WorkOrderRepository:
 
     def save_draft(self, header, lines=(), crew=(), *, order_id=None, expected_revision=None, draft_key=None, brigade_ids=()):
         with transaction(self.db):
-            self.work._writable()
-            if order_id is not None:
-                order = self._order(order_id)
-                if order["status"] != "draft":
-                    raise ValidationError("Редактировать можно только черновик наряда")
-                if expected_revision is not None and expected_revision != order["revision"]:
-                    raise ValidationError("Черновик изменён в другой вкладке. Откройте его заново")
-            elif draft_key:
-                existing = self.db.execute("SELECT id,project_id FROM work_orders WHERE draft_key=?", (draft_key,)).fetchone()
-                if existing:
-                    if existing["project_id"] != self.project_id:
-                        raise ValidationError("Форма относится к другому объекту")
-                    return existing["id"]
-            values = self._header(header)
-            line_values = self._line_values(lines)
-            if brigade_ids:
-                crew=self._with_brigades(crew,list(brigade_ids),values[3],values[0])
-            crew_values = self._crew_values(crew, values[3], values[0])
-            now = instant()
-            if order_id is None:
-                order_id = self.db.execute("INSERT INTO work_orders(project_id,shift_date,shift_start,shift_end,contractor_id,"
-                    "issued_by_employee_id,foreman_employee_id,notes,created_at,updated_at,draft_key) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
-                    (self.project_id,) + values + (now, now, clean(draft_key or uuid4().hex, "Ключ черновика", 100))).lastrowid
+            return self._save_draft(header, lines, crew, order_id=order_id, expected_revision=expected_revision, draft_key=draft_key, brigade_ids=brigade_ids)
+
+    def _save_draft(self, header, lines=(), crew=(), *, order_id=None, expected_revision=None, draft_key=None, brigade_ids=()):
+        """Use an existing writer transaction for atomic residual commands."""
+        if not self.db.in_transaction:
+            raise RuntimeError("Draft write requires a transaction")
+        self.work._writable()
+        if order_id is not None:
+            order = self._order(order_id)
+            if order["status"] != "draft":
+                raise ValidationError("Редактировать можно только черновик наряда")
+            if expected_revision is not None and expected_revision != order["revision"]:
+                raise ValidationError("Черновик изменён в другой вкладке. Откройте его заново")
+        elif draft_key:
+            existing = self.db.execute("SELECT id,project_id FROM work_orders WHERE draft_key=?", (draft_key,)).fetchone()
+            if existing:
+                if existing["project_id"] != self.project_id:
+                    raise ValidationError("Форма относится к другому объекту")
+                return existing["id"]
+        values = self._header(header)
+        line_values = self._line_values(lines)
+        if brigade_ids:
+            crew=self._with_brigades(crew,list(brigade_ids),values[3],values[0])
+        crew_values = self._crew_values(crew, values[3], values[0])
+        inherited = self.db.execute('SELECT 1 FROM sqlite_master WHERE name=\'work_order_transfers\'').fetchone() and order_id is not None and self.db.execute('SELECT 1 FROM work_order_transfers WHERE target_order_id=?',(order_id,)).fetchone()
+        original_lines = {}
+        if inherited:
+            original_lines = {r['work_item_id']:dict(r) for r in self.db.execute('SELECT * FROM work_order_lines WHERE work_order_id=?',(order_id,))}
+            if set(original_lines)!={r[0] for r in line_values} or any(original_lines[r[0]]['planned_quantity']!=r[2] or original_lines[r[0]]['unit_snapshot']!=r[3] for r in line_values):
+                raise ValidationError('Наследуемые строки и количества изменяются только отменой и новым переносом')
+            source_date=self.db.execute('SELECT s.shift_date FROM work_order_transfers t JOIN work_orders s ON s.id=t.source_order_id WHERE t.target_order_id=?',(order_id,)).fetchone()[0]
+            if values[0]<source_date:raise ValidationError('Наследуемая смена не может предшествовать исходной')
+        now = instant()
+        if order_id is None:
+            order_id = self.db.execute("INSERT INTO work_orders(project_id,shift_date,shift_start,shift_end,contractor_id,"
+                "issued_by_employee_id,foreman_employee_id,notes,created_at,updated_at,draft_key) VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+                (self.project_id,) + values + (now, now, clean(draft_key or uuid4().hex, "Ключ черновика", 100))).lastrowid
+        else:
+            self.db.execute("UPDATE work_orders SET shift_date=?,shift_start=?,shift_end=?,contractor_id=?,issued_by_employee_id=?,"
+                            "foreman_employee_id=?,notes=?,updated_at=?,revision=revision+1 WHERE id=?", values + (now, order_id))
+            self.db.execute("DELETE FROM work_order_crew_members WHERE crew_id IN (SELECT id FROM work_order_crew WHERE work_order_id=?)", (order_id,))
+            self.db.execute("DELETE FROM work_order_crew WHERE work_order_id=?", (order_id,))
+            if not inherited:self.db.execute("DELETE FROM work_order_lines WHERE work_order_id=?", (order_id,))
+        if inherited:
+            for line in line_values:
+                self.db.execute('UPDATE work_order_lines SET plan_version_id=?,work_name_snapshot=?,location_snapshot=?,sort_order=?,remarks=? WHERE id=?',(line[1],line[4],line[5],line[6],line[7],original_lines[line[0]]['id']))
+        else:self.db.executemany("INSERT INTO work_order_lines(work_order_id,work_item_id,plan_version_id,planned_quantity,unit_snapshot,"
+                            "work_name_snapshot,location_snapshot,sort_order,remarks) VALUES (?,?,?,?,?,?,?,?,?)",
+                            [(order_id,) + values for values in line_values])
+        for values in crew_values:
+            crew_id = self.db.execute("INSERT INTO work_order_crew(work_order_id,specialty_id,planned_count,comment,"
+                "specialty_name_snapshot,employees_snapshot) VALUES (?,?,?,?,?,?)", (order_id,) + values[:5]).lastrowid
+            if self.people.extended:
+                self.db.executemany("INSERT INTO work_order_crew_members(crew_id,employee_id,brigade_id,brigade_number_snapshot) VALUES (?,?,?,?)",
+                    [(crew_id,e)+self._member_snapshot(e,header['shift_date']) for e in values[5]])
             else:
-                self.db.execute("UPDATE work_orders SET shift_date=?,shift_start=?,shift_end=?,contractor_id=?,issued_by_employee_id=?,"
-                                "foreman_employee_id=?,notes=?,updated_at=?,revision=revision+1 WHERE id=?", values + (now, order_id))
-                self.db.execute("DELETE FROM work_order_crew_members WHERE crew_id IN (SELECT id FROM work_order_crew WHERE work_order_id=?)", (order_id,))
-                self.db.execute("DELETE FROM work_order_crew WHERE work_order_id=?", (order_id,))
-                self.db.execute("DELETE FROM work_order_lines WHERE work_order_id=?", (order_id,))
-            self.db.executemany("INSERT INTO work_order_lines(work_order_id,work_item_id,plan_version_id,planned_quantity,unit_snapshot,"
-                                "work_name_snapshot,location_snapshot,sort_order,remarks) VALUES (?,?,?,?,?,?,?,?,?)",
-                                [(order_id,) + values for values in line_values])
-            for values in crew_values:
-                crew_id = self.db.execute("INSERT INTO work_order_crew(work_order_id,specialty_id,planned_count,comment,"
-                    "specialty_name_snapshot,employees_snapshot) VALUES (?,?,?,?,?,?)", (order_id,) + values[:5]).lastrowid
-                if self.people.extended:
-                    self.db.executemany("INSERT INTO work_order_crew_members(crew_id,employee_id,brigade_id,brigade_number_snapshot) VALUES (?,?,?,?)",
-                        [(crew_id,e)+self._member_snapshot(e,header['shift_date']) for e in values[5]])
-                else:
-                    self.db.executemany("INSERT INTO work_order_crew_members(crew_id,employee_id) VALUES (?,?)", [(crew_id, e) for e in values[5]])
-            return order_id
+                self.db.executemany("INSERT INTO work_order_crew_members(crew_id,employee_id) VALUES (?,?)", [(crew_id, e) for e in values[5]])
+        return order_id
 
     def issue(self, order_id):
         with transaction(self.db):
@@ -175,6 +192,9 @@ class WorkOrderRepository:
                 return order["order_number"]
             if order["status"] != "draft":
                 raise ValidationError("Можно выдать только черновик")
+            if self.db.execute("SELECT 1 FROM sqlite_master WHERE name='work_order_transfers'").fetchone():
+                from app.services.work_order_control import WorkOrderControlProjection
+                WorkOrderControlProjection(self.db,self.project_id).assert_issue(order_id)
             self._header(dict(order))
             if order["issued_by_employee_id"] is None or order["foreman_employee_id"] is None:
                 raise ValidationError("Для выдачи укажите мастера / прораба и бригадира")
@@ -213,6 +233,9 @@ class WorkOrderRepository:
             order = self._order(order_id)
             if order["status"] not in ("draft", "issued", "in_progress"):
                 raise ValidationError("Отмена этого статуса недоступна")
+            if self.db.execute("SELECT 1 FROM sqlite_master WHERE name='work_order_transfers'").fetchone():
+                from .work_order_transfer_repository import WorkOrderTransferRepository
+                if WorkOrderTransferRepository(self.db,self.project_id).cancel_target_in_transaction(order_id,reason):return
             self.db.execute("UPDATE work_orders SET status='cancelled',cancellation_reason=?,updated_at=? WHERE id=?",
                             (reason, instant(), order_id))
 

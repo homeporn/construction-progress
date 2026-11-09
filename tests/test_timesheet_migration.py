@@ -67,7 +67,12 @@ def test_010_preserves_old_cells_ids_crew_events_and_progress_with_verified_back
         "SELECT type,name FROM sqlite_master WHERE type IN ('index','trigger') AND sql IS NOT NULL")}
     database.migrate(db)
     assert database._fingerprints(db, data['columns'])[1] == before
-    assert WorkOrderRepository(db).get_order(data['order'], knowledge_cutoff=cutoff) == old_document
+    upgraded_document=WorkOrderRepository(db).get_order(data['order'], knowledge_cutoff=cutoff)
+    #013 adds derived control fields. Every pre-existing document field must
+    #remain identical; additive analytical keys are not stored-data corruption.
+    assert [{key:new[key] for key in old} for old,new in zip(old_document['lines'],upgraded_document['lines'])]==old_document['lines']
+    assert len(upgraded_document['lines'])==len(old_document['lines'])
+    assert {key:value for key,value in upgraded_document.items() if key!='lines'}=={key:value for key,value in old_document.items() if key!='lines'}
     assert HistoricalCalculator(db).calculate_as_of('2026-01-31', '2026-02-01T00:00:00Z', data['plan_version']) == report
     assert (report.total.actual_progress, report.total.confirmed_progress) == (Decimal('.6'), Decimal('.45'))
     assert old_objects <= {(row[0], row[1]) for row in db.execute(

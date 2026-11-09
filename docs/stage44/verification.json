@@ -1,0 +1,44 @@
+{
+  "captured_at": "2026-11-09T13:23:37.190190+00:00",
+  "head": "dc113a6980bc5dc3b34fc8cf2ee2f4eb5702a2df",
+  "python": "3.13.5 (main, Aug 10 2026, 12:06:59) [GCC 14.2.0]",
+  "platform": "Linux-6.18.57-x86_64-with-glibc2.41",
+  "sqlite": "3.46.1",
+  "old_source_changes": [
+    "app/database.py",
+    "app/web/__init__.py",
+    "app/web/navigation.py"
+  ],
+  "old_migrations_unchanged": true,
+  "calculation_engine_unchanged": true,
+  "primary_repositories_unchanged": true,
+  "working_db_sha256": "10f7b9964447ec33eb9d4865ef38b52384f606174217c1304d420510a55dc036",
+  "working_db_mtime_ns": 1792249029104690559,
+  "working_db_unchanged": true,
+  "working_db_integrity": [
+    [
+      "ok"
+    ]
+  ],
+  "working_db_foreign_keys": [],
+  "working_db_migrations": [
+    "001_initial.sql",
+    "002_replace_guards.sql",
+    "003_web_workflow.sql",
+    "004_projects.sql"
+  ],
+  "tests_before": {
+    "passed": 933,
+    "skipped": 7,
+    "failed": 0,
+    "seconds": 110.07
+  },
+  "tests_after": {
+    "passed": 1041,
+    "skipped": 7,
+    "failed": 0,
+    "seconds": 130.41
+  },
+  "new_tests": 108,
+  "note": "Existing local database inspected read-only; all upgrade and payroll tests use separate synthetic temporary databases."
+}

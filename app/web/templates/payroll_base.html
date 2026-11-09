@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Управленческие начисления · {{ tabs[tab] }}{% endblock %}
+{% block heading %}Управленческие начисления{% endblock %}
+{% block subtitle %}{{ tabs[tab] }} · {{ current_project.name }}. Учёт начислений, не выплаты и не расчёт налогов.{% endblock %}
+{% block content %}
+<nav class="tabs" aria-label="Начисления">{% for key,label in tabs.items() %}<a href="{{ url_for('payroll.' + key) }}" {% if key==tab %}class="active" aria-current="page"{% endif %}>{{ label }}</a>{% endfor %}</nav>
+{% block payroll_content %}{% endblock %}
+{% endblock %}
+{% block scripts %}<link rel="stylesheet" href="{{ url_for('static', filename='css/payroll.css') }}">{% endblock %}

@@ -52,6 +52,18 @@ def line(s):
     return s['orders'].get_order(s['order'])['lines'][0]
 
 
+def dispose_remaining(s):
+    """Explicit4.5 fixture decision; a comment alone no longer closes a balance."""
+    from app.repositories.work_order_transfer_repository import WorkOrderTransferRepository
+    row=line(s)
+    if row['actual']>row['confirmed']:
+        confirm(s,str(row['actual']-row['confirmed']))
+    row=line(s)
+    if row['available']>0:
+        WorkOrderTransferRepository(s['events'].db).writeoff(s['line'],str(row['available']),
+            'Явная отмена оставшегося фронта в тесте жизненного цикла',uuid4().hex)
+
+
 def foreign_order(db, specialty):
     p = ProjectRepository(db).create_project('Чужой объект', 'FOREIGN', buildings=[dict(code='К1',name='Чужой корпус')])
     w, people = WorkRepository(db, p), PersonnelRepository(db, p)
@@ -84,17 +96,19 @@ def test_required_acceptance_counts_and_automatic_then_explicit_statuses(db, flo
     assert (result.source.actual,result.source.confirmed)==(Decimal('150'),Decimal('100'))
     assert result.actual_progress==Decimal('0.15') and result.confirmed_progress==Decimal('0.1')
     action(s,'submitted');action(s,'accepted',comment='Проверены связанные объёмы')
-    with pytest.raises(ValidationError,match='остатке'):action(s,'closed')
-    action(s,'closed',comment='20 м² перенесены на следующую смену')
+    with pytest.raises(ValidationError,match='остат'):action(s,'closed')
+    with pytest.raises(ValidationError,match='остат'):action(s,'closed',comment='Один комментарий не переносит остаток')
+    dispose_remaining(s);action(s,'accepted',comment='Повторно проверены подтверждение и списание')
+    action(s,'closed',comment='20 м² явно списаны с задания')
     document=s['orders'].get_order(s['order'])
     assert document['status']=='closed' and document['closed_at']
     assert [h['new_status'] for h in document['history']]==['draft','issued','in_progress','submitted','accepted','closed']
-    assert len(document['approvals'])==1 and len(document['workflow_actions'])==3
+    assert len(document['approvals'])==1 and len(document['workflow_actions'])==4
     assert document['closed_snapshot']['values'][0]['actual']=='100'
-    assert document['closed_snapshot']['values'][0]['confirmed']=='60'
+    assert document['closed_snapshot']['values'][0]['confirmed']=='100'
     assert document['closed_snapshot']['values'][0]['remaining']=='20'
     assert db.execute('SELECT count(*) FROM fact_events').fetchone()[0]==3
-    assert db.execute('SELECT count(*) FROM confirmation_events').fetchone()[0]==2
+    assert db.execute('SELECT count(*) FROM confirmation_events').fetchone()[0]==3
 
 
 def test_confirmation_can_reference_an_order_when_fact_is_unlinked(db,flow):
@@ -256,14 +270,14 @@ def test_recheck_after_correction_is_needed_for_closure(flow):
     assert s['orders'].get_order(s['order'])['status']=='accepted'
     assert not line(s)['review_current']
     with pytest.raises(ValidationError,match='Повторите'):action(s,'closed',comment='Остаток переносится')
-    action(s,'accepted',comment='Повторно проверено');action(s,'closed',comment='30 м² не выполнены')
+    dispose_remaining(s);action(s,'accepted',comment='Повторно проверено');action(s,'closed',comment='30 м² явно списаны')
     assert s['orders'].get_order(s['order'])['status']=='closed'
 
 
 def test_correction_after_closing_keeps_snapshot_history_and_warns(flow):
     s=flow
-    original=fact(s,'100');confirm(s,'60')
-    action(s,'submitted');action(s,'accepted');action(s,'closed',comment='20 м² перенесены')
+    original=fact(s,'100');confirm(s,'60');fact(s,'40',linked=False)
+    action(s,'submitted');dispose_remaining(s);action(s,'accepted');action(s,'closed',comment='20 м² явно списаны')
     before=s['orders'].get_order(s['order'])
     fact(s,'-10',correction_of_id=original,comment='Уточнение обмера после закрытия')
     after=s['orders'].get_order(s['order'])
@@ -278,12 +292,13 @@ def test_workflow_actions_are_idempotent_and_do_not_create_volume_events(db,flow
     s=flow
     fact(s,'100')
     if target in ('accepted','closed'):action(s,'submitted')
-    if target=='closed':action(s,'accepted')
+    if target=='closed':dispose_remaining(s);action(s,'accepted')
+    event_counts=[db.execute('SELECT count(*) FROM '+table).fetchone()[0] for table in ('fact_events','confirmation_events')]
     first=action(s,target,comment='Остаток перенесён',event_key='same-action')
     assert action(s,target,comment='Остаток перенесён',event_key='same-action')==first
     assert db.execute('SELECT count(*) FROM work_order_workflow_actions WHERE event_key=?',('same-action',)).fetchone()[0]==1
     assert db.execute('SELECT count(*) FROM fact_events').fetchone()[0]==1
-    assert db.execute('SELECT count(*) FROM confirmation_events').fetchone()[0]==0
+    assert [db.execute('SELECT count(*) FROM '+table).fetchone()[0] for table in ('fact_events','confirmation_events')]==event_counts
 
 
 @pytest.mark.parametrize('table',['work_order_workflow_actions','work_order_line_reviews'])
@@ -299,7 +314,7 @@ def test_event_knowledge_cutoff_hides_later_events_statuses_and_approvals(db,flo
     before=instant()
     fact(s,'70');after_first=instant()
     fact(s,'30');confirm(s,'60')
-    action(s,'submitted');action(s,'accepted');action(s,'closed',comment='20 м² перенесены')
+    action(s,'submitted');dispose_remaining(s);action(s,'accepted');action(s,'closed',comment='20 м² явно списаны')
     early=s['orders'].get_order(s['order'],knowledge_cutoff=before)
     middle=s['orders'].get_order(s['order'],knowledge_cutoff=after_first)
     assert early['status']=='issued' and not early['lines'][0]['has_actual']
@@ -375,7 +390,7 @@ def test_foreign_reviewer_or_foreign_order_cannot_be_used(db,flow):
 def test_historical_card_does_not_leak_later_closure_or_cancellation(flow):
     s=flow
     fact(s,'70');cutoff=instant()
-    action(s,'submitted');action(s,'accepted');action(s,'closed',comment='50 м² перенесены')
+    action(s,'submitted');dispose_remaining(s);action(s,'accepted');action(s,'closed',comment='50 м² явно списаны')
     earlier=s['orders'].get_order(s['order'],knowledge_cutoff=cutoff)
     assert earlier['closed_at'] is None and earlier['cancellation_reason']==''
     assert earlier['updated_at']<=cutoff and earlier['workflow_reason']=='Первое выполнение, связанное с нарядом'
@@ -405,10 +420,11 @@ def test_cancelling_in_progress_keeps_events_and_allows_only_corrections(db,flow
 def test_new_events_obey_document_status_and_global_fact_stays_independent(flow,status):
     s=flow
     fact(s,'70');action(s,'submitted')
+    if status=='closed':dispose_remaining(s)
     if status in ('accepted','closed'):action(s,'accepted')
     if status=='closed':action(s,'closed',comment='50 м² перенесены')
     with pytest.raises(ValidationError):fact(s,'1')
-    if status=='submitted':confirm(s,'10')
+    if status in ('submitted','accepted'):confirm(s,'10')
     else:
         with pytest.raises(ValidationError):confirm(s,'10')
     fact(s,'1',linked=False)

@@ -13,7 +13,8 @@ GROUPS = (
     ("production", "Производство", "✓", (
         ("facts", "Фактическое выполнение", "events.facts", {}),
         ("confirmations", "Подтверждение объёмов", "events.confirmations", {}),
-        ("orders", "Наряды-задания", "work_orders.index", {}))),
+        ("orders", "Наряды-задания", "work_orders.index", {}),
+        ("order_control", "Контроль нарядов", "work_orders.control", {}))),
     ("personnel", "Персонал и бригады", "♙", (
         ("workers", "Работники", "personnel_management.workers", {}),
         ("brigades", "Бригады", "personnel_management.brigades", {}),
@@ -30,6 +31,13 @@ GROUPS = (
         ("works", "Выработка по работам", "labor.works", {}),
         ("contractors", "Подрядчики", "labor.contractors", {}),
         ("brigades", "Бригады", "labor.brigades", {}))),
+    ("payroll", "Начисления", "₽", (
+        ("overview", "Сводка начислений", "payroll.overview", {}),
+        ("terms", "Условия оплаты", "payroll.terms", {}),
+        ("rates", "Расценки", "payroll.rates", {}),
+        ("operations", "Технологические операции", "payroll.operations", {}),
+        ("periods", "Расчётные периоды", "payroll.periods", {}),
+        ("claims", "Сопоставление подтверждений", "payroll.claims", {}))),
     ("analytics", "Аналитика", "▤", (
         ("summary", "Физическая готовность", "analytics.index", {"tab": "summary"}),
         ("natural", "Натуральные объёмы", "analytics.index", {"tab": "volumes"}),
@@ -62,7 +70,7 @@ def active_page():
     if endpoint.startswith("events."):
         return "production", "confirmations" if "confirmation" in endpoint else "facts"
     if endpoint.startswith("work_orders."):
-        return "production", "orders"
+        return "production", "order_control" if endpoint in ("work_orders.control", "work_orders.control_export") else "orders"
     if endpoint.startswith("personnel_import."):
         return "personnel", "imports" if endpoint.endswith("history") else "import"
     if endpoint.startswith("personnel_management."):
@@ -81,6 +89,9 @@ def active_page():
         return "productivity", "overview" if item in ("history", "export") else item
     if endpoint.startswith("progress."):
         return "analytics", "summary"
+    if endpoint.startswith("payroll."):
+        item = endpoint.split(".", 1)[1]
+        return "payroll", item if item in ("overview", "terms", "rates", "operations", "claims") else "periods"
     if endpoint.startswith("analytics."):
         tab = args.get("tab", "summary")
         if "group_" in endpoint:
@@ -140,7 +151,7 @@ def navigation_context():
         tail = "Мастер импорта"
     elif endpoint == "analytics.group_form":
         tail = "Состав группы"
-    elif endpoint.startswith("work_orders.") and endpoint != "work_orders.index":
+    elif endpoint.startswith("work_orders.") and endpoint not in ("work_orders.index", "work_orders.control", "work_orders.control_export"):
         tail = "Наряд-задание"
     elif endpoint == "progress.index":
         tail = "История прогресса"

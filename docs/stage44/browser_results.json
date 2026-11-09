@@ -1,0 +1,73 @@
+{
+  "stage": "4.4",
+  "captured_at": "2026-11-09T12:59:50.871578+00:00",
+  "status": "blocked",
+  "environment": "Linux default execution sandbox",
+  "viewport": [
+    1366,
+    768
+  ],
+  "transport": "Chromium interception to real Flask test_client over subprocess stdio; TCP/WSGI transport not tested",
+  "launch_attempts": [
+    {
+      "args": [
+        "--no-sandbox",
+        "--disable-dev-shm-usage"
+      ],
+      "error": "BrowserType.launch: Target page, context or browser has been closed\nBrowser logs:\n\n<launching> /usr/bin/chromium --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-edgeupdater --disable-extensions --disable-features=AvoidUnnecessaryBeforeUnloadCheckSync,BoundaryEventDispatchTracksNodeRemoval,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,BlockOriginHeaderModificationOnRedirect,Translate,AutoDeElevate,OptimizationHints,msForceBrowserSignIn,msEdgeUpdateLaunchServicesPreferredVersion --enable-features=CDPScreenshotNewSurface --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --disable-updater-scheduler --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --disable-infobars --disable-search-engine-choice-screen --disable-sync --enable-unsafe-swiftshader --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --no-sandbox --disable-dev-shm-usage --user-data-dir=/tmp/playwright_chromiumdev_profile-vXNeoN --remote-debugging-pipe --no-startup-window\n<launched> pid=12000\n[pid=12000][err] [12000:12000:1109/125952.553665:ERROR:third_party/crashpad/crashpad/util/linux/socket.cc:45] setsockopt: Operation not permitted (1)\nCall log:\n  - <launching> /usr/bin/chromium --disable-field-trial-config --disable-background-networking --disable-background-timer-throttling --disable-backgrounding-occluded-windows --disable-back-forward-cache --disable-breakpad --disable-client-side-phishing-detection --disable-component-extensions-with-background-pages --disable-component-update --no-default-browser-check --disable-default-apps --disable-dev-shm-usage --disable-edgeupdater --disable-extensions --disable-features=AvoidUnnecessaryBeforeUnloadCheckSync,BoundaryEventDispatchTracksNodeRemoval,DestroyProfileOnBrowserClose,DialMediaRouteProvider,GlobalMediaControls,HttpsUpgrades,LensOverlay,MediaRouter,PaintHolding,ThirdPartyStoragePartitioning,BlockOriginHeaderModificationOnRedirect,Translate,AutoDeElevate,OptimizationHints,msForceBrowserSignIn,msEdgeUpdateLaunchServicesPreferredVersion --enable-features=CDPScreenshotNewSurface --allow-pre-commit-input --disable-hang-monitor --disable-ipc-flooding-protection --disable-popup-blocking --disable-prompt-on-repost --disable-renderer-backgrounding --disable-updater-scheduler --force-color-profile=srgb --metrics-recording-only --no-first-run --password-store=basic --use-mock-keychain --no-service-autorun --export-tagged-pdf --disable-search-engine-choice-screen --unsafely-disable-devtools-self-xss-warnings --edge-skip-compat-layer-relaunch --disable-infobars --disable-search-engine-choice-screen --disable-sync --enable-unsafe-swiftshader --headless --hide-scrollbars --mute-audio --blink-settings=primaryHoverType=2,availableHoverTypes=2,primaryPointerType=4,availablePointerTypes=4 --no-sandbox --no-sandbox --disable-dev-shm-usage --user-data-dir=/tmp/playwright_chromiumdev_profile-vXNeoN --remote-debugging-pipe --no-startup-window\n  - <launched> pid=12000\n  - [pid=12000][err] [12000:12000:1109/125952.553665:ERROR:third_party/crashpad/crashpad/util/linux/socket.cc:45] setsockopt: Operation not permitted (1)\n  - [pid=12000] <gracefully close start>\n  - [pid=12000] <kill>\n  - [pid=12000] <will force kill>\n  - [pid=12000] <process did exit: exitCode=null, signal=SIGTRAP>\n  - [pid=12000] starting temporary directories cleanup\n  - [pid=12000] finished temporary directories cleanup\n  - [pid=12000] <gracefully close end>\n"
+    }
+  ],
+  "checks": [],
+  "screenshots": [],
+  "browser_page_created": false,
+  "javascript_errors": null,
+  "console_errors": null,
+  "unexpected_http_errors": null,
+  "external_requests": null,
+  "browser_observation_status": "not_observed: no page created; null error/request fields mean unobserved",
+  "safari_tested": false,
+  "working_database_opened": false,
+  "synthetic_data_only": true,
+  "backend_acceptance": {
+    "status": "passed",
+    "checks": [
+      "All seven payroll sections render with one navigation group",
+      "Rendered form contracts save all four pay systems, explicit full-month norm, and two nonoverlapping rate intervals",
+      "Explicit confirmation claim: preview reserves nothing; checked confirmation creates one equal distribution",
+      "Exact synthetic totals: hourly 160×350; salary 80000×120/160; piece 100×300÷5; combined base plus 20%; rate switch 80×350+80×400",
+      "Reasoned manual bonus recalculates; approval freezes original; new correction is 47500 with -2500 delta while approved 50000 snapshot and export remain unchanged",
+      "All eight XLSX sheets exist, totals and correction deltas are numeric and equal stored snapshots, XML has no formulas; primary sources unchanged and SQLite integrity ok",
+      "Missing CSRF and foreign Origin are rejected with 403"
+    ],
+    "xlsx_sheets": [
+      "01. Сводка",
+      "02. По работникам",
+      "03. Почасовая часть",
+      "04. Окладная часть",
+      "05. Сдельная часть",
+      "06. Премии и корректировки",
+      "07. Применённые расценки",
+      "08. Источники"
+    ],
+    "numeric_fixture": {
+      "source": "synthetic disposable fixture only",
+      "hourly": "160*350=56000",
+      "salary": "80000*120/160=60000",
+      "piece": "100*300/5=6000 each",
+      "combined": "60000+20%=72000",
+      "rate_change": "80*350+80*400=60000",
+      "manual_bonus": "56000+500=56500",
+      "approved": "50000",
+      "corrected": "47500",
+      "correction_delta": "-2500"
+    },
+    "working_database_opened": false,
+    "primary_sources_unchanged": true,
+    "transport": "real Flask test_client with rendered CSRF forms; no browser",
+    "expected_http_errors": [
+      403
+    ]
+  },
+  "blocker": "Chromium failed before page creation in the default execution sandbox. Exact launch stderr is retained in launch_attempts; browser interactions, JavaScript behavior and screenshots were not observed.",
+  "backend_refreshed_at": "2026-11-09T13:23:37.823187+00:00"
+}

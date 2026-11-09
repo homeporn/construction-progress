@@ -18,7 +18,7 @@ class AssignmentOverrunError(ValidationError):
 
 class WorkOrderWorkflowRepository:
     FACT_STATUSES = ('issued', 'in_progress')
-    CONFIRMATION_STATUSES = ('issued', 'in_progress', 'submitted')
+    CONFIRMATION_STATUSES = ('issued', 'in_progress', 'submitted', 'accepted')
 
     def __init__(self, db, project_id=1):
         self.db, self.project_id = db, project_id
@@ -33,6 +33,26 @@ class WorkOrderWorkflowRepository:
             raise ValidationError('Строка наряда не принадлежит текущему объекту')
         return row
 
+    def _latest_control(self,order_id):
+        if not self.db.execute("SELECT 1 FROM sqlite_master WHERE name='work_order_transfers'").fetchone():return None
+        # A child also depends on the current capacity of every active ancestor.
+        # Never validate a write against an old requested timestamp that hides a
+        # later source correction or a revoked disposition.
+        return self.db.execute('WITH RECURSIVE ancestors(id) AS (SELECT ? UNION '
+            'SELECT t.source_order_id FROM work_order_transfers t JOIN ancestors a ON a.id=t.target_order_id '
+            'WHERE NOT EXISTS(SELECT 1 FROM work_order_transfer_cancellations c WHERE c.transfer_id=t.id)) '
+            'SELECT MAX(stamp) FROM ('
+            'SELECT MAX(o.updated_at) AS stamp FROM work_orders o JOIN ancestors a ON a.id=o.id '
+            'UNION ALL SELECT MAX(w.performed_at) FROM work_order_workflow_actions w JOIN ancestors a ON a.id=w.work_order_id '
+            'UNION ALL SELECT MAX(f.recorded_at) FROM fact_events f JOIN work_order_lines l ON l.id=f.work_order_line_id JOIN ancestors a ON a.id=l.work_order_id '
+            'UNION ALL SELECT MAX(c.recorded_at) FROM confirmation_events c JOIN work_order_lines l ON l.id=c.work_order_line_id JOIN ancestors a ON a.id=l.work_order_id '
+            'UNION ALL SELECT MAX(t.created_at) FROM work_order_transfers t JOIN ancestors a ON a.id=t.source_order_id OR a.id=t.target_order_id '
+            'UNION ALL SELECT MAX(c.recorded_at) FROM work_order_transfer_cancellations c JOIN work_order_transfers t ON t.id=c.transfer_id JOIN ancestors a ON a.id=t.source_order_id OR a.id=t.target_order_id '
+            'UNION ALL SELECT MAX(r.recorded_at) FROM work_order_resolutions r JOIN work_order_lines l ON l.id=r.line_id JOIN ancestors a ON a.id=l.work_order_id '
+            'UNION ALL SELECT MAX(m.recorded_at) FROM work_order_volume_matches m JOIN work_order_lines l ON l.id=m.line_id JOIN ancestors a ON a.id=l.work_order_id '
+            'UNION ALL SELECT MAX(d.updated_at) FROM work_order_transfers t JOIN work_orders d ON d.id=t.target_order_id JOIN ancestors a ON a.id=t.source_order_id)',
+            (order_id,)).fetchone()[0]
+
     def validate_link(self, line_id, item_id, kind, business_date, recorded_at, *, correction=False,
                       quantity=ZERO, allow_overrun=False, overrun_reason=''):
         """Caller owns BEGIN IMMEDIATE through event insertion and timeline checks."""
@@ -46,6 +66,8 @@ class WorkOrderWorkflowRepository:
         last_action = self.db.execute('SELECT MAX(performed_at) FROM work_order_workflow_actions WHERE work_order_id=?', (line['work_order_id'],)).fetchone()[0]
         if recorded_at < max(line['issued_at'], line['updated_at'], last_action or line['issued_at']):
             raise ValidationError('Регистрация события не может предшествовать выдаче или последнему статусу наряда')
+        latest_control=self._latest_control(line['work_order_id'])
+        if latest_control and recorded_at<latest_control:raise ValidationError('Регистрация события не может предшествовать решениям об остатках')
         if kind == 'fact' and quantity > ZERO:
             # Check every affected business-date boundary, including backdated input.
             by_date = {}
@@ -67,6 +89,9 @@ class WorkOrderWorkflowRepository:
         return line
 
     def metrics(self, order_id, report_date=None, knowledge_cutoff=None):
+        if self.db.execute("SELECT 1 FROM sqlite_master WHERE name='work_order_transfers'").fetchone():
+            from app.services.work_order_control import WorkOrderControlProjection
+            return WorkOrderControlProjection(self.db,self.project_id).metrics(order_id,report_date,knowledge_cutoff)
         with read_snapshot(self.db):
             self.orders._order(order_id)
             cutoff = instant(knowledge_cutoff)
@@ -117,7 +142,12 @@ class WorkOrderWorkflowRepository:
         return result
 
     def _snapshot(self, values):
-        return encoded([{key: format(value, 'f') if isinstance(value, Decimal) else value for key, value in row.items()} for row in values])
+        def normalize(value):
+            if isinstance(value,Decimal):return format(value,'f')
+            if isinstance(value,dict):return {key:normalize(item) for key,item in value.items()}
+            if isinstance(value,(list,tuple)):return [normalize(item) for item in value]
+            return value
+        return encoded(normalize(values))
 
     def act(self, order_id, action, employee_id, *, comment='', checks=None, event_key, performed_at=None, expected_signature=None):
         if action not in ('submitted', 'accepted', 'closed'):
@@ -133,13 +163,16 @@ class WorkOrderWorkflowRepository:
                 if (old['work_order_id'], old['action'], old['employee_id'], old['comment']) != (order_id, action, employee_id, comment):
                     raise ValidationError('Ключ операции уже использован для другого действия')
                 return old['id']
-            allowed = dict(submitted=('in_progress',), accepted=('submitted', 'accepted'), closed=('accepted',))
+            has_control=bool(self.db.execute("SELECT 1 FROM sqlite_master WHERE name='work_order_transfers'").fetchone())
+            allowed = dict(submitted=('issued','in_progress') if has_control else ('in_progress',), accepted=('submitted', 'accepted'), closed=('accepted',))
             if order['status'] not in allowed[action]:
                 raise ValidationError('Недопустимый переход статуса наряда')
             now = instant(performed_at)
             last_action = self.db.execute('SELECT MAX(performed_at) FROM work_order_workflow_actions WHERE work_order_id=?', (order_id,)).fetchone()[0]
             if now < max(order['updated_at'], last_action or order['updated_at']):
                 raise ValidationError('Действие не может предшествовать истории наряда')
+            latest_control=self._latest_control(order_id)
+            if latest_control and now<latest_control:raise ValidationError('Действие не может предшествовать решениям об остатках')
             latest = self.db.execute('SELECT MAX(recorded_at) FROM (SELECT f.recorded_at FROM fact_events f JOIN work_order_lines l '
                 'ON l.id=f.work_order_line_id WHERE l.work_order_id=? UNION ALL SELECT c.recorded_at FROM confirmation_events c '
                 'JOIN work_order_lines l ON l.id=c.work_order_line_id WHERE l.work_order_id=?)', (order_id, order_id)).fetchone()[0]
@@ -149,19 +182,29 @@ class WorkOrderWorkflowRepository:
             if expected_signature is not None and signature != expected_signature:
                 raise ValidationError('Связанные объёмы изменились. Обновите карточку и проверьте результаты заново')
             if action == 'submitted' and not any(row['actual'] > ZERO for row in values):
-                raise ValidationError('Для сдачи требуется положительный факт, связанный с нарядом')
+                from app.services.work_order_control import WorkOrderControlProjection
+                if not has_control or WorkOrderControlProjection(self.db,self.project_id).closure_errors(order_id,now[:10],now):
+                    raise ValidationError('Для сдачи требуется положительный связанный факт либо полное явное разрешение остатков')
             if action == 'accepted':
                 checks = checks or {}
                 if set(checks) != {row['line_id'] for row in values} or not all(c.get('checked') is True for c in checks.values()):
                     raise ValidationError('Отметьте проверку каждой строки наряда')
+                if has_control and any((row['overrun']>ZERO or row['confirmed_overrun']>ZERO) and not checks[row['line_id']].get('comment','').strip() for row in values):
+                    raise ValidationError('Укажите решение проверяющего о превышении в замечании строки')
             if action == 'closed':
                 review = self.db.execute("SELECT event_signature FROM work_order_workflow_actions WHERE work_order_id=? "
                                          "AND action='accepted' ORDER BY performed_at DESC,id DESC LIMIT 1", (order_id,)).fetchone()
                 if review is None or review['event_signature'] != signature:
                     raise ValidationError('Объёмы изменились после проверки. Повторите проверку наряда')
-                if any(row['remaining'] > ZERO for row in values) and not comment:
+                if has_control:
+                    from app.services.work_order_control import WorkOrderControlProjection
+                    errors=WorkOrderControlProjection(self.db,self.project_id).closure_errors(order_id,now[:10],now)
+                    if errors:raise ValidationError('; '.join(errors))
+                elif any(row['remaining'] > ZERO for row in values) and not comment:
                     raise ValidationError('Укажите комментарий о невыполненном остатке задания')
             history_id = None
+            if action=='submitted' and order['status']=='issued':
+                self.db.execute("UPDATE work_orders SET status='in_progress',updated_at=?,workflow_reason='Явное разрешение остатка без создания факта' WHERE id=?",(now,order_id))
             if order['status'] != action:
                 self.db.execute('UPDATE work_orders SET status=?,updated_at=?,workflow_reason=?,closed_at=? WHERE id=?',
                     (action, now, comment or {'submitted': 'Сдача на проверку', 'accepted': 'Проверка результатов', 'closed': 'Закрытие наряда'}[action],
