@@ -65,7 +65,8 @@ def index(tab='summary'):
 @bp.get('/analytics/export.xlsx')
 def download():
     data=context();payload=export_xlsx(data,data['deviation_mode'])
-    return send_file(BytesIO(payload),as_attachment=True,download_name='Construction-Progress-'+data['report_date']+'.xlsx',
+    from app.branding import PRODUCT_SLUG
+    return send_file(BytesIO(payload),as_attachment=True,download_name=PRODUCT_SLUG+'-'+data['report_date']+'.xlsx',
                      mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
 
 

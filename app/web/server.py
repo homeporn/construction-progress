@@ -8,6 +8,7 @@ from urllib.parse import urlsplit
 
 from werkzeug.serving import make_server, WSGIRequestHandler
 from . import create_app
+from app.branding import PRODUCT_NAME
 
 
 class LocalRequestHandler(WSGIRequestHandler):
@@ -48,7 +49,7 @@ class LocalServer:
                 previous_handlers[sig] = signal.getsignal(sig)
                 signal.signal(sig, lambda *_: self.stop_event.set())
         try:
-            print("Construction Progress: " + self.origin, flush=True)
+            print(PRODUCT_NAME + ": " + self.origin, flush=True)
             print("Завершение: кнопка «Завершить работу» или Ctrl+C в Terminal.", flush=True)
             if open_browser:
                 def launch_browser():

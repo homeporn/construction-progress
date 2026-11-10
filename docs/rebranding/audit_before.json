@@ -1,0 +1,727 @@
+[
+  {
+    "path": "README.md",
+    "line": 1,
+    "text": "# Construction Progress — контроль нарядов и остатков (этап 4.5)"
+  },
+  {
+    "path": "README.md",
+    "line": 69,
+    "text": "- [Отдельный шаблон импорта табеля](docs/templates/Construction_Progress_4_2_Шаблон_табеля.xlsx)."
+  },
+  {
+    "path": "README.md",
+    "line": 88,
+    "text": "- [Пустой шаблон Excel с примером и инструкцией](docs/templates/Construction_Progress_4_1_Шаблон_импорта_работников.xlsx)."
+  },
+  {
+    "path": "README.md",
+    "line": 148,
+    "text": "не создаются. Рабочая база — `data/construction_progress.sqlite3`."
+  },
+  {
+    "path": "README.md",
+    "line": 162,
+    "text": ".venv/bin/python -m scripts.init_db --db data/construction_progress.sqlite3"
+  },
+  {
+    "path": "README.md",
+    "line": 163,
+    "text": ".venv/bin/python -m scripts.seed_catalog --db data/construction_progress.sqlite3"
+  },
+  {
+    "path": "app/__init__.py",
+    "line": 1,
+    "text": "\"\"\"Construction Progress: offline construction progress accounting.\"\"\""
+  },
+  {
+    "path": "app/config.py",
+    "line": 4,
+    "text": "DEFAULT_DB_PATH = PROJECT_ROOT / \"data\" / \"construction_progress.sqlite3\""
+  },
+  {
+    "path": "app/portable/launcher.py",
+    "line": 62,
+    "text": "                print('Construction Progress {}: {}'.format(VERSION, server.origin), flush=True)"
+  },
+  {
+    "path": "app/portable/launcher.py",
+    "line": 85,
+    "text": "    parser = argparse.ArgumentParser(description='Construction Progress Windows Portable')"
+  },
+  {
+    "path": "app/portable/logging.py",
+    "line": 10,
+    "text": "        code = record.msg if (record.name == 'construction_progress.portable' and"
+  },
+  {
+    "path": "app/portable/logging.py",
+    "line": 20,
+    "text": "    logger = logging.getLogger('construction_progress.portable')"
+  },
+  {
+    "path": "app/portable/paths.py",
+    "line": 37,
+    "text": "    def database(self): return self.data / 'construction_progress.sqlite3'"
+  },
+  {
+    "path": "app/portable/server.py",
+    "line": 83,
+    "text": "                          SESSION_COOKIE_NAME='construction_progress_{}'.format(self.httpd.effective_port))"
+  },
+  {
+    "path": "app/services/personnel_template.py",
+    "line": 4,
+    "text": "TEMPLATE_NAME='Construction_Progress_4_1_Шаблон_импорта_работников.xlsx'"
+  },
+  {
+    "path": "app/services/timesheet_xlsx.py",
+    "line": 37,
+    "text": "TEMPLATE_NAME = 'Construction_Progress_4_2_Шаблон_табеля.xlsx'"
+  },
+  {
+    "path": "app/web/__init__.py",
+    "line": 46,
+    "text": "                      SESSION_COOKIE_NAME=\"construction_progress\", SESSION_COOKIE_HTTPONLY=True,"
+  },
+  {
+    "path": "app/web/routes/analytics.py",
+    "line": 68,
+    "text": "    return send_file(BytesIO(payload),as_attachment=True,download_name='Construction-Progress-'+data['report_date']+'.xlsx',"
+  },
+  {
+    "path": "app/web/routes/timesheets.py",
+    "line": 277,
+    "text": "        download_name=\"Construction_Progress_4_2_Шаблон_табеля.xlsx\")"
+  },
+  {
+    "path": "app/web/server.py",
+    "line": 37,
+    "text": "        self.app.config[\"SESSION_COOKIE_NAME\"] = \"construction_progress_{}\".format(self.httpd.server_port)"
+  },
+  {
+    "path": "app/web/server.py",
+    "line": 51,
+    "text": "            print(\"Construction Progress: \" + self.origin, flush=True)"
+  },
+  {
+    "path": "app/web/templates/base.html",
+    "line": 6,
+    "text": "  <title>{% block title %}Construction Progress{% endblock %} · Construction Progress</title>"
+  },
+  {
+    "path": "app/web/templates/base.html",
+    "line": 45,
+    "text": "      <div class=\"page-heading\"><div><div class=\"eyebrow\">CONSTRUCTION PROGRESS</div><h1>{% block heading %}{% endblock %}</h1><p class=\"subtitle\">{% block subtitle %}{% endblock %}</p></div>{% block heading_action %}{% endblock %}</div>"
+  },
+  {
+    "path": "app/web/templates/base.html",
+    "line": 51,
+    "text": "    <footer>Construction Progress <span>Локальная SQLite · Объекты и рабочие пространства</span></footer>"
+  },
+  {
+    "path": "app/web/templates/stopped.html",
+    "line": 2,
+    "text": "<html lang=\"ru\"><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\"><title>Работа завершена · Construction Progress</title></head>"
+  },
+  {
+    "path": "docs/analytics.md",
+    "line": 173,
+    "text": "   cd \"/путь/к/construction-progress\""
+  },
+  {
+    "path": "docs/analytics.md",
+    "line": 176,
+    "text": "   db = connect(\"data/construction_progress.sqlite3\")"
+  },
+  {
+    "path": "docs/building_management.md",
+    "line": 65,
+    "text": "   cd \"/путь/к/construction-progress\""
+  },
+  {
+    "path": "docs/macos_first_run.md",
+    "line": 22,
+    "text": "   в `data/construction_progress.sqlite3`."
+  },
+  {
+    "path": "docs/macos_first_run.md",
+    "line": 26,
+    "text": "cd \"$HOME/Downloads/construction-progress\""
+  },
+  {
+    "path": "docs/macos_first_run.md",
+    "line": 112,
+    "text": "./start.command --check --test-db > \"$HOME/Desktop/construction-progress-check.txt\" 2>&1"
+  },
+  {
+    "path": "docs/macos_first_run.md",
+    "line": 133,
+    "text": "не являются необходимой частью Construction Progress."
+  },
+  {
+    "path": "docs/macos_first_run.md",
+    "line": 147,
+    "text": "Он открывает `data/construction_progress.sqlite3`, при необходимости применяя"
+  },
+  {
+    "path": "docs/macos_first_run.md",
+    "line": 250,
+    "text": "cp -Rp data \"$HOME/Desktop/Construction Progress data backup $(date +%Y%m%d-%H%M%S)\""
+  },
+  {
+    "path": "docs/macos_first_run.md",
+    "line": 266,
+    "text": "Не перемещайте и не удаляйте рабочий `data/construction_progress.sqlite3` для"
+  },
+  {
+    "path": "docs/macos_preflight_results.md",
+    "line": 40,
+    "text": "На отдельной временной копии исходников по пути `/tmp/Construction Progress приёмка ...`"
+  },
+  {
+    "path": "docs/stage32_results.md",
+    "line": 1,
+    "text": "# Construction Progress — результаты этапа 3.2"
+  },
+  {
+    "path": "docs/stage32_results.md",
+    "line": 106,
+    "text": "cd \"/путь/к/construction-progress\""
+  },
+  {
+    "path": "docs/stage33_results.md",
+    "line": 1,
+    "text": "# Construction Progress — результаты этапа 3.3"
+  },
+  {
+    "path": "docs/stage3_1_1_results.md",
+    "line": 3,
+    "text": "Дата: 17 октября 2026. Репозиторий `/workspace/construction-progress`."
+  },
+  {
+    "path": "docs/stage3_1_1_results.md",
+    "line": 51,
+    "text": "Рабочая `data/construction_progress.sqlite3` не изменялась: SHA-256, mtime и список"
+  },
+  {
+    "path": "docs/stage3_diagnostic_example.txt",
+    "line": 1,
+    "text": "Construction Progress — диагностика без изменения данных"
+  },
+  {
+    "path": "docs/stage3_diagnostic_example.txt",
+    "line": 2,
+    "text": "Каталог проекта: /tmp/Construction Progress приёмка 2gwcw9wb"
+  },
+  {
+    "path": "docs/stage3_diagnostic_example.txt",
+    "line": 7,
+    "text": "Интерпретатор: /tmp/Construction Progress приёмка 2gwcw9wb/.venv/bin/python"
+  },
+  {
+    "path": "docs/stage3_diagnostic_example.txt",
+    "line": 8,
+    "text": "Окружение: /tmp/Construction Progress приёмка 2gwcw9wb/.venv"
+  },
+  {
+    "path": "docs/stage3_diagnostic_example.txt",
+    "line": 11,
+    "text": "Путь к базе: /tmp/Construction Progress приёмка 2gwcw9wb/data/acceptance/acceptance.sqlite3"
+  },
+  {
+    "path": "docs/stage40_results.md",
+    "line": 1,
+    "text": "# Construction Progress — результаты этапа 4.0"
+  },
+  {
+    "path": "docs/stage41_personnel_import.md",
+    "line": 75,
+    "text": "Скачайте [шаблон](templates/Construction_Progress_4_1_Шаблон_импорта_работников.xlsx)"
+  },
+  {
+    "path": "docs/stage41_personnel_import.md",
+    "line": 208,
+    "text": "cd \"$HOME/Downloads/construction-progress\""
+  },
+  {
+    "path": "docs/stage41_personnel_import.md",
+    "line": 221,
+    "text": "path = Path('data/construction_progress.sqlite3').resolve()"
+  },
+  {
+    "path": "docs/stage41_personnel_import.md",
+    "line": 257,
+    "text": "p = Path('data/construction_progress.sqlite3').resolve()"
+  },
+  {
+    "path": "docs/stage41_results.md",
+    "line": 161,
+    "text": "[Скачать шаблон](templates/Construction_Progress_4_1_Шаблон_импорта_работников.xlsx)."
+  },
+  {
+    "path": "docs/stage41_results.md",
+    "line": 240,
+    "text": "docs/templates/Construction_Progress_4_1_Шаблон_импорта_работников.xlsx"
+  },
+  {
+    "path": "docs/stage421_performance.md",
+    "line": 395,
+    "text": "cd \"/путь/к/construction-progress\""
+  },
+  {
+    "path": "docs/stage421_performance.md",
+    "line": 406,
+    "text": "БД и не должна переноситься поверх `data/construction_progress.sqlite3`."
+  },
+  {
+    "path": "docs/stage42_navigation.md",
+    "line": 1,
+    "text": "# Навигация Construction Progress — этап 4.2"
+  },
+  {
+    "path": "docs/stage42_results.md",
+    "line": 58,
+    "text": "Рабочий файл `data/construction_progress.sqlite3` остался со схемой 001–004,"
+  },
+  {
+    "path": "docs/stage42_results.md",
+    "line": 113,
+    "text": "[Пустой шаблон импорта](templates/Construction_Progress_4_2_Шаблон_табеля.xlsx)."
+  },
+  {
+    "path": "docs/stage42_results.md",
+    "line": 134,
+    "text": "cd \"$HOME/Downloads/construction-progress\""
+  },
+  {
+    "path": "docs/stage42_results.md",
+    "line": 148,
+    "text": "p = Path('data/construction_progress.sqlite3').resolve()"
+  },
+  {
+    "path": "docs/stage42_results.md",
+    "line": 183,
+    "text": "p = Path('data/construction_progress.sqlite3').resolve()"
+  },
+  {
+    "path": "docs/stage42_results.md",
+    "line": 300,
+    "text": "docs/templates/Construction_Progress_4_2_Шаблон_табеля.xlsx"
+  },
+  {
+    "path": "docs/stage42_timesheets.md",
+    "line": 123,
+    "text": "Скачайте отдельный [шаблон табеля](templates/Construction_Progress_4_2_Шаблон_табеля.xlsx)."
+  },
+  {
+    "path": "docs/stage43/baseline.json",
+    "line": 3,
+    "text": "  \"git_status\": \" M .gitignore\\n M README.md\\n M app/database.py\\n M app/repositories/event_repository.py\\n M app/services/analytics_service.py\\n M app/web/__init__.py\\n M app/web/routes/analytics.py\\n M app/web/routes/events.py\\n M app/web/routes/personnel.py\\n M app/web/routes/personnel_management.py\\n M app/web/routes/volumes.py\\n M app/web/templates/_personnel_nav.html\\n M app/web/templates/base.html\\n M app/web/templates/personnel.html\\n M docs/compatibility.md\\n M docs/schema.md\\n M tests/test_personnel_import.py\\n?? app/portable/\\n?? app/repositories/timesheet_repository.py\\n?? app/services/timesheet_xlsx.py\\n?? app/web/navigation.py\\n?? app/web/pagination.py\\n?? app/web/routes/navigation.py\\n?? app/web/routes/timesheets.py\\n?? app/web/static/css/navigation.css\\n?? app/web/static/css/timesheets.css\\n?? app/web/static/js/navigation.js\\n?? app/web/static/js/timesheets.js\\n?? app/web/templates/_pagination.html\\n?? app/web/templates/_timesheet_macros.html\\n?? app/web/templates/settings.html\\n?? app/web/templates/timesheet_create.html\\n?? app/web/templates/timesheet_detail.html\\n?? app/web/templates/timesheet_import.html\\n?? app/web/templates/timesheet_preview.html\\n?? app/web/templates/timesheets.html\\n?? \\\"docs/examples/stage42_\\\\320\\\\242\\\\320\\\\260\\\\320\\\\261\\\\320\\\\265\\\\320\\\\273\\\\321\\\\214_\\\\320\\\\276\\\\320\\\\272\\\\321\\\\202\\\\321\\\\217\\\\320\\\\261\\\\321\\\\200\\\\321\\\\214_2026.xlsx\\\"\\n?? docs/performance/\\n?? docs/screenshots/stage421_mobile.png\\n?? docs/screenshots/stage421_timesheet.png\\n?? docs/screenshots/stage42_bulk_preview.png\\n?? docs/screenshots/stage42_excel_preview.png\\n?? docs/screenshots/stage42_navigation_mobile.png\\n?? docs/screenshots/stage42_timesheet_approved.png\\n?? docs/screenshots/stage42_timesheet_empty.png\\n?? docs/screenshots/stage42_timesheet_filled.png\\n?? docs/screenshots/stage42_timesheet_history.png\\n?? docs/stage421_performance.md\\n?? docs/stage421_results.md\\n?? docs/stage42_browser_results.json\\n?? docs/stage42_navigation.md\\n?? docs/stage42_results.md\\n?? docs/stage42_timesheets.md\\n?? \\\"docs/templates/Construction_Progress_4_2_\\\\320\\\\250\\\\320\\\\260\\\\320\\\\261\\\\320\\\\273\\\\320\\\\276\\\\320\\\\275_\\\\321\\\\202\\\\320\\\\260\\\\320\\\\261\\\\320\\\\265\\\\320\\\\273\\\\321\\\\217.xlsx\\\"\\n?? docs/windows/\\n?? docs/windows_build_results.md\\n?? docs/windows_portable.md\\n?? migrations/010_timesheets.sql\\n?? packaging/\\n?? requirements/windows.txt\\n?? tests/browser_stage42.py\\n?? tests/performance/\\n?? tests/test_navigation.py\\n?? tests/test_timesheet_migration.py\\n?? tests/test_timesheet_web.py\\n?? tests/test_timesheet_xlsx.py\\n?? tests/test_timesheet_xlsx_integration.py\\n?? tests/test_timesheets.py\\n?? tests/test_windows_bundle.py\\n?? tests/test_windows_instance.py\\n?? tests/test_windows_launcher.py\\n?? tests/test_windows_server.py\\n?? tests/test_windows_storage.py\\n?? tools/\\n?? windows_launcher.py\\n\","
+  },
+  {
+    "path": "docs/stage44_results.md",
+    "line": 175,
+    "text": "1. Завершите Construction Progress и его локальный сервер. Сохраните каталог"
+  },
+  {
+    "path": "docs/stage44_results.md",
+    "line": 184,
+    "text": "path = Path('data/construction_progress.sqlite3')"
+  },
+  {
+    "path": "docs/stage44_results.md",
+    "line": 204,
+    "text": ".venv/bin/python -m scripts.init_db --db data/construction_progress.sqlite3"
+  },
+  {
+    "path": "docs/stage44_results.md",
+    "line": 207,
+    "text": "db = connect('data/construction_progress.sqlite3')"
+  },
+  {
+    "path": "docs/stage45_results.md",
+    "line": 228,
+    "text": "p=Path('data/construction_progress.sqlite3')"
+  },
+  {
+    "path": "docs/stage45_results.md",
+    "line": 243,
+    "text": ".venv/bin/python -m scripts.init_db --db data/construction_progress.sqlite3"
+  },
+  {
+    "path": "docs/stage45_results.md",
+    "line": 252,
+    "text": "db=connect('data/construction_progress.sqlite3')"
+  },
+  {
+    "path": "docs/web.md",
+    "line": 125,
+    "text": "![Сводка Construction Progress](screenshots/dashboard.png)"
+  },
+  {
+    "path": "docs/windows/baseline.json",
+    "line": 4,
+    "text": "  \"git_status\": \" M README.md\\n M app/database.py\\n M app/repositories/event_repository.py\\n M app/services/analytics_service.py\\n M app/web/__init__.py\\n M app/web/routes/analytics.py\\n M app/web/routes/events.py\\n M app/web/routes/personnel.py\\n M app/web/routes/personnel_management.py\\n M app/web/routes/volumes.py\\n M app/web/templates/_personnel_nav.html\\n M app/web/templates/base.html\\n M app/web/templates/personnel.html\\n M docs/compatibility.md\\n M docs/schema.md\\n M tests/test_personnel_import.py\\n?? app/repositories/timesheet_repository.py\\n?? app/services/timesheet_xlsx.py\\n?? app/web/navigation.py\\n?? app/web/pagination.py\\n?? app/web/routes/navigation.py\\n?? app/web/routes/timesheets.py\\n?? app/web/static/css/navigation.css\\n?? app/web/static/css/timesheets.css\\n?? app/web/static/js/navigation.js\\n?? app/web/static/js/timesheets.js\\n?? app/web/templates/_pagination.html\\n?? app/web/templates/_timesheet_macros.html\\n?? app/web/templates/settings.html\\n?? app/web/templates/timesheet_create.html\\n?? app/web/templates/timesheet_detail.html\\n?? app/web/templates/timesheet_import.html\\n?? app/web/templates/timesheet_preview.html\\n?? app/web/templates/timesheets.html\\n?? \\\"docs/examples/stage42_\\\\320\\\\242\\\\320\\\\260\\\\320\\\\261\\\\320\\\\265\\\\320\\\\273\\\\321\\\\214_\\\\320\\\\276\\\\320\\\\272\\\\321\\\\202\\\\321\\\\217\\\\320\\\\261\\\\321\\\\200\\\\321\\\\214_2026.xlsx\\\"\\n?? docs/performance/after-large.json\\n?? docs/performance/after-medium.json\\n?? docs/performance/after-small-final.json\\n?? docs/performance/after-small.json\\n?? docs/performance/before-large.json\\n?? docs/performance/before-medium.json\\n?? docs/performance/before-small.json\\n?? docs/performance/browser.json\\n?? docs/performance/dataset-large.json\\n?? docs/performance/dataset-medium.json\\n?? docs/performance/dataset-small.json\\n?? docs/performance/equivalence-after-large.json\\n?? docs/performance/equivalence-after-medium.json\\n?? docs/performance/equivalence-after-small.json\\n?? docs/performance/equivalence-before-large.json\\n?? docs/performance/equivalence-before-medium.json\\n?? docs/performance/equivalence-before-small.json\\n?? docs/performance/excel-components.json\\n?? docs/performance/journals-final-large.json\\n?? docs/performance/journals-final-medium.json\\n?? docs/performance/journals-final-small.json\\n?? docs/performance/personnel-import.json\\n?? docs/performance/pytest-initial.txt\\n?? docs/performance/pytest-intermediate-green.txt\\n?? docs/performance/pytest-latest-full.txt\\n?? docs/performance/report-status.json\\n?? docs/performance/stage42-baseline-source.tar.gz\\n?? docs/performance/timesheet-2000.json\\n?? docs/performance/timesheet-500.json\\n?? docs/performance/writes-large.json\\n?? docs/screenshots/stage421_mobile.png\\n?? docs/screenshots/stage421_timesheet.png\\n?? docs/screenshots/stage42_bulk_preview.png\\n?? docs/screenshots/stage42_excel_preview.png\\n?? docs/screenshots/stage42_navigation_mobile.png\\n?? docs/screenshots/stage42_timesheet_approved.png\\n?? docs/screenshots/stage42_timesheet_empty.png\\n?? docs/screenshots/stage42_timesheet_filled.png\\n?? docs/screenshots/stage42_timesheet_history.png\\n?? docs/stage421_performance.md\\n?? docs/stage421_results.md\\n?? docs/stage42_browser_results.json\\n?? docs/stage42_navigation.md\\n?? docs/stage42_results.md\\n?? docs/stage42_timesheets.md\\n?? \\\"docs/templates/Construction_Progress_4_2_\\\\320\\\\250\\\\320\\\\260\\\\320\\\\261\\\\320\\\\273\\\\320\\\\276\\\\320\\\\275_\\\\321\\\\202\\\\320\\\\260\\\\320\\\\261\\\\320\\\\265\\\\320\\\\273\\\\321\\\\217.xlsx\\\"\\n?? migrations/010_timesheets.sql\\n?? tests/browser_stage42.py\\n?? tests/performance/test_fresh_performance.py\\n?? tests/test_navigation.py\\n?? tests/test_timesheet_migration.py\\n?? tests/test_timesheet_web.py\\n?? tests/test_timesheet_xlsx.py\\n?? tests/test_timesheet_xlsx_integration.py\\n?? tests/test_timesheets.py\\n?? tools/__init__.py\\n?? tools/performance/benchmark.py\\n?? tools/performance/browser_check.py\\n?? tools/performance/excel_benchmark.py\\n?? tools/performance/generate_dataset.py\\n?? tools/performance/import_benchmark.py\\n?? tools/performance/verify_equivalence.py\\n?? tools/performance/write_benchmark.py\\n\","
+  },
+  {
+    "path": "docs/windows_build_results.md",
+    "line": 24,
+    "text": "- `packaging/windows/ConstructionProgress.spec`, `build.ps1`,"
+  },
+  {
+    "path": "docs/windows_build_results.md",
+    "line": 45,
+    "text": "`ConstructionProgress-Windows-BuildKit-W1.0.zip` содержит актуальные исходники,"
+  },
+  {
+    "path": "docs/windows_build_results.md",
+    "line": 49,
+    "text": "`ConstructionProgress-Windows-x64.zip`. Linux-файл не переименовывается в EXE."
+  },
+  {
+    "path": "docs/windows_portable.md",
+    "line": 1,
+    "text": "# Construction Progress W1.0 — Windows Portable"
+  },
+  {
+    "path": "docs/windows_portable.md",
+    "line": 8,
+    "text": "Архив `ConstructionProgress-Windows-BuildKit-W1.0.zip` содержит исходники текущей"
+  },
+  {
+    "path": "docs/windows_portable.md",
+    "line": 32,
+    "text": "профиле и только затем создаёт **`dist/ConstructionProgress-Windows-x64.zip`**."
+  },
+  {
+    "path": "docs/windows_portable.md",
+    "line": 46,
+    "text": "ConstructionProgress/"
+  },
+  {
+    "path": "docs/windows_portable.md",
+    "line": 47,
+    "text": "  ConstructionProgress.exe"
+  },
+  {
+    "path": "docs/windows_portable.md",
+    "line": 58,
+    "text": "База: `data/construction_progress.sqlite3` **рядом с EXE**, вне `_internal`."
+  },
+  {
+    "path": "docs/windows_portable.md",
+    "line": 67,
+    "text": "& .\\ConstructionProgress.exe --data-dir \"$env:USERPROFILE\\Documents\\Construction Progress Data\""
+  },
+  {
+    "path": "docs/windows_portable.md",
+    "line": 132,
+    "text": "& .\\ConstructionProgress.exe --backup"
+  },
+  {
+    "path": "docs/windows_portable.md",
+    "line": 134,
+    "text": "& .\\ConstructionProgress.exe --data-dir 'D:\\Личный профиль' --backup"
+  },
+  {
+    "path": "docs/windows_portable.md",
+    "line": 154,
+    "text": "& .\\ConstructionProgress.exe --diagnose"
+  },
+  {
+    "path": "docs/work_order_events.md",
+    "line": 125,
+    "text": "   cd \"/путь/к/construction-progress\""
+  },
+  {
+    "path": "docs/work_order_events.md",
+    "line": 128,
+    "text": "   db = connect(\"data/construction_progress.sqlite3\")"
+  },
+  {
+    "path": "docs/work_order_events.md",
+    "line": 166,
+    "text": "файла на путь `data/construction_progress.sqlite3`. Все приложения, открывавшие"
+  },
+  {
+    "path": "docs/work_orders.md",
+    "line": 140,
+    "text": "   cd \"/путь/к/construction-progress\""
+  },
+  {
+    "path": "docs/work_orders.md",
+    "line": 164,
+    "text": "./start.command --db \"$HOME/Desktop/Construction Progress приёмка/проверка.sqlite3\""
+  },
+  {
+    "path": "docs/workspaces.md",
+    "line": 43,
+    "text": "cp_release=\"$HOME/Downloads/construction-progress-3.1\""
+  },
+  {
+    "path": "docs/workspaces.md",
+    "line": 44,
+    "text": "cp_install=\"$HOME/Applications/Construction Progress\""
+  },
+  {
+    "path": "docs/workspaces.md",
+    "line": 90,
+    "text": "working = Path('data/construction_progress.sqlite3').resolve()"
+  },
+  {
+    "path": "main.py",
+    "line": 45,
+    "text": "    parser = LaunchArgumentParser(description=\"Construction Progress — локальное приложение, подготовка к испытаниям macOS\")"
+  },
+  {
+    "path": "main.py",
+    "line": 46,
+    "text": "    parser.add_argument(\"--db\", help=\"Путь к рабочей SQLite-базе; по умолчанию data/construction_progress.sqlite3\")"
+  },
+  {
+    "path": "main.py",
+    "line": 97,
+    "text": "            print(\"Construction Progress — локальная база\")"
+  },
+  {
+    "path": "packaging/windows/BUILD_KIT_README.txt",
+    "line": 1,
+    "text": "Construction Progress W1.0 - Windows Build Kit"
+  },
+  {
+    "path": "packaging/windows/BUILD_KIT_README.txt",
+    "line": 4,
+    "text": "There is no ConstructionProgress.exe inside this archive."
+  },
+  {
+    "path": "packaging/windows/BUILD_KIT_README.txt",
+    "line": 14,
+    "text": "   dist\\ConstructionProgress-Windows-x64.zip"
+  },
+  {
+    "path": "packaging/windows/BUILD_KIT_README.txt",
+    "line": 17,
+    "text": "Extract it, run ConstructionProgress.exe and keep the console window open."
+  },
+  {
+    "path": "packaging/windows/BUILD_WINDOWS.cmd",
+    "line": 15,
+    "text": "echo Build finished. See dist\\ConstructionProgress-Windows-x64.zip"
+  },
+  {
+    "path": "packaging/windows/ConstructionProgress.spec",
+    "line": 24,
+    "text": "exe = EXE(pyz, a.scripts, [], exclude_binaries=True, name='ConstructionProgress',"
+  },
+  {
+    "path": "packaging/windows/ConstructionProgress.spec",
+    "line": 28,
+    "text": "coll = COLLECT(exe, a.binaries, a.datas, strip=False, upx=False, name='ConstructionProgress')"
+  },
+  {
+    "path": "packaging/windows/PORTABLE_README.txt",
+    "line": 1,
+    "text": "Construction Progress - Windows Portable x64"
+  },
+  {
+    "path": "packaging/windows/PORTABLE_README.txt",
+    "line": 4,
+    "text": "Documents\\Construction Progress. Run ConstructionProgress.exe."
+  },
+  {
+    "path": "packaging/windows/PORTABLE_README.txt",
+    "line": 15,
+    "text": "  data\\construction_progress.sqlite3 - working database"
+  },
+  {
+    "path": "packaging/windows/PORTABLE_README.txt",
+    "line": 22,
+    "text": "  ConstructionProgress.exe --data-dir \"C:\\Users\\YOUR_NAME\\Documents\\CP Profile\""
+  },
+  {
+    "path": "packaging/windows/PORTABLE_README.txt",
+    "line": 26,
+    "text": "  ConstructionProgress.exe --diagnose"
+  },
+  {
+    "path": "packaging/windows/PORTABLE_README.txt",
+    "line": 28,
+    "text": "  ConstructionProgress.exe --backup"
+  },
+  {
+    "path": "packaging/windows/README.md",
+    "line": 14,
+    "text": "Unicode profile, and then creates `dist/ConstructionProgress-Windows-x64.zip`."
+  },
+  {
+    "path": "packaging/windows/VERSION.txt",
+    "line": 1,
+    "text": "Construction Progress W1.0"
+  },
+  {
+    "path": "packaging/windows/build.ps1",
+    "line": 27,
+    "text": "$Release = Join-Path $Root \"dist\\ConstructionProgress-Windows-x64.zip\""
+  },
+  {
+    "path": "packaging/windows/build.ps1",
+    "line": 44,
+    "text": "    Invoke-Checked $BuildPython @(\"-m\", \"PyInstaller\", \"--clean\", \"--noconfirm\", \"--distpath\", (Join-Path $Work \"dist\"), \"--workpath\", (Join-Path $Work \"pyinstaller\"), (Join-Path $PSScriptRoot \"ConstructionProgress.spec\"))"
+  },
+  {
+    "path": "packaging/windows/build.ps1",
+    "line": 48,
+    "text": "$Portable = Join-Path $Work \"dist\\ConstructionProgress\""
+  },
+  {
+    "path": "packaging/windows/version_info.txt",
+    "line": 5,
+    "text": "    StringStruct('FileDescription', 'Construction Progress Windows Portable'),"
+  },
+  {
+    "path": "packaging/windows/version_info.txt",
+    "line": 7,
+    "text": "    StringStruct('InternalName', 'ConstructionProgress'),"
+  },
+  {
+    "path": "packaging/windows/version_info.txt",
+    "line": 8,
+    "text": "    StringStruct('OriginalFilename', 'ConstructionProgress.exe'),"
+  },
+  {
+    "path": "packaging/windows/version_info.txt",
+    "line": 9,
+    "text": "    StringStruct('ProductName', 'Construction Progress'),"
+  },
+  {
+    "path": "scripts/check_environment.py",
+    "line": 170,
+    "text": "    print(\"Construction Progress — диагностика без изменения данных\", flush=True)"
+  },
+  {
+    "path": "tests/browser_stage42.py",
+    "line": 75,
+    "text": "        match = re.search(r'Construction Progress: (http://127\\.0\\.0\\.1:\\d+)', content)"
+  },
+  {
+    "path": "tests/browser_stage42.py",
+    "line": 106,
+    "text": "    with tempfile.TemporaryDirectory(prefix='construction-progress-stage42-browser-') as tmp:"
+  },
+  {
+    "path": "tests/browser_stage43.py",
+    "line": 116,
+    "text": "    with tempfile.TemporaryDirectory(prefix='construction-progress-stage43-route-') as tmp:"
+  },
+  {
+    "path": "tests/browser_stage43.py",
+    "line": 233,
+    "text": "    with tempfile.TemporaryDirectory(prefix='construction-progress-stage43-browser-') as tmp:"
+  },
+  {
+    "path": "tests/browser_stage44.py",
+    "line": 293,
+    "text": "    with tempfile.TemporaryDirectory(prefix='construction-progress-stage44-route-') as tmp:"
+  },
+  {
+    "path": "tests/browser_stage44.py",
+    "line": 316,
+    "text": "    with tempfile.TemporaryDirectory(prefix='construction-progress-stage44-browser-') as tmp:"
+  },
+  {
+    "path": "tests/browser_stage45.py",
+    "line": 315,
+    "text": "    with tempfile.TemporaryDirectory(prefix='construction-progress-stage45-route-') as tmp:"
+  },
+  {
+    "path": "tests/browser_stage45.py",
+    "line": 334,
+    "text": "    with tempfile.TemporaryDirectory(prefix='construction-progress-stage45-browser-') as tmp:"
+  },
+  {
+    "path": "tests/test_launch.py",
+    "line": 174,
+    "text": "    root = tmp_path / \"Construction Progress Приёмка с пробелами\""
+  },
+  {
+    "path": "tests/test_launch.py",
+    "line": 186,
+    "text": "    working = root / \"data\" / \"construction_progress.sqlite3\""
+  },
+  {
+    "path": "tests/test_web_services.py",
+    "line": 101,
+    "text": "    assert local.app.config[\"SESSION_COOKIE_NAME\"] == \"construction_progress_54321\""
+  },
+  {
+    "path": "tests/test_windows_bundle.py",
+    "line": 44,
+    "text": "    bad = tmp_path / 'ConstructionProgress.exe'"
+  },
+  {
+    "path": "tests/test_windows_bundle.py",
+    "line": 54,
+    "text": "        prefix = 'ConstructionProgress-Windows-BuildKit/'"
+  },
+  {
+    "path": "tests/test_windows_launcher.py",
+    "line": 31,
+    "text": "    assert not (target/'data/construction_progress.sqlite3').exists()"
+  },
+  {
+    "path": "tests/test_windows_storage.py",
+    "line": 14,
+    "text": "    return PortablePaths.discover(executable=tmp_path / 'Тест User' / 'Construction Progress' / 'ConstructionProgress.exe',"
+  },
+  {
+    "path": "tests/test_windows_storage.py",
+    "line": 25,
+    "text": "    assert p.database == tmp_path / 'Тест User' / 'Construction Progress' / 'data' / 'construction_progress.sqlite3'"
+  },
+  {
+    "path": "tools/windows/bundle.py",
+    "line": 29,
+    "text": "        matches = list((root/'docs/templates').glob('Construction_Progress_{}_*.xlsx'.format(version)))"
+  },
+  {
+    "path": "tools/windows/bundle.py",
+    "line": 54,
+    "text": "    check_windows_exe(folder/'ConstructionProgress.exe')"
+  },
+  {
+    "path": "tools/windows/bundle.py",
+    "line": 75,
+    "text": "            if path.is_file(): archive.write(path, 'ConstructionProgress/'+path.relative_to(folder).as_posix())"
+  },
+  {
+    "path": "tools/windows/bundle.py",
+    "line": 77,
+    "text": "            archive.writestr('ConstructionProgress/'+directory+'/', b'')"
+  },
+  {
+    "path": "tools/windows/bundle.py",
+    "line": 96,
+    "text": "    prefix='ConstructionProgress-Windows-BuildKit/'"
+  },
+  {
+    "path": "tools/windows/smoke.py",
+    "line": 39,
+    "text": "    db = initialize(profile/'data/construction_progress.sqlite3')"
+  },
+  {
+    "path": "tools/windows/smoke.py",
+    "line": 132,
+    "text": "    exe=args.folder.resolve()/'ConstructionProgress.exe'"
+  },
+  {
+    "path": "tools/windows/smoke.py",
+    "line": 135,
+    "text": "        profile=Path(temporary)/'Test User Тест Документы Construction Progress'/('Длинный профиль '+ 'a'*64)"
+  },
+  {
+    "path": "tools/windows/smoke.py",
+    "line": 143,
+    "text": "        database=profile/'data/construction_progress.sqlite3'"
+  }
+]

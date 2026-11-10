@@ -272,6 +272,7 @@ def export(timesheet_id):
 
 @bp.get("/timesheets/template.xlsx")
 def template():
+    from app.branding import PRODUCT_SLUG
     return send_file(BytesIO(make_timesheet_template()),
         mimetype="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", as_attachment=True,
-        download_name="Construction_Progress_4_2_Шаблон_табеля.xlsx")
+        download_name=PRODUCT_SLUG+"_Шаблон_табеля.xlsx")

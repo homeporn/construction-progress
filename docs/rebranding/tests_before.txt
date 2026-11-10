@@ -1,0 +1,25 @@
+........................................................................ [  6%]
+........................................................................ [ 12%]
+........................................................................ [ 19%]
+........................................................................ [ 25%]
+........................................................................ [ 31%]
+........................................................................ [ 38%]
+........................................................................ [ 44%]
+........................................................................ [ 50%]
+........................................................................ [ 57%]
+........................................................................ [ 63%]
+........................................................................ [ 69%]
+........................................................................ [ 76%]
+................................sssssss................................. [ 82%]
+........................................................................ [ 88%]
+........................................................................ [ 95%]
+.......................................................                  [100%]
+=========================== short test summary info ============================
+SKIPPED [1] tests/test_windows_server.py:62: Sandbox forbids loopback sockets; run this test on the Windows build machine.
+SKIPPED [1] tests/test_windows_server.py:83: Sandbox forbids loopback sockets; run this test on the Windows build machine.
+SKIPPED [1] tests/test_windows_server.py:99: Sandbox forbids loopback sockets; run this test on the Windows build machine.
+SKIPPED [1] tests/test_windows_server.py:112: Sandbox forbids loopback sockets; run this test on the Windows build machine.
+SKIPPED [1] tests/test_windows_server.py:124: Sandbox forbids loopback sockets; run this test on the Windows build machine.
+SKIPPED [1] tests/test_windows_server.py:154: Sandbox forbids loopback sockets; run this test on the Windows build machine.
+SKIPPED [1] tests/test_windows_server.py:165: Sandbox forbids loopback sockets; run this test on the Windows build machine.
+1128 passed, 7 skipped in 158.36s (0:02:38)

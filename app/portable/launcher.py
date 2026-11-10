@@ -5,6 +5,7 @@ import logging
 import signal
 import sys
 import webbrowser
+from app.branding import PRODUCT_NAME
 
 from .instance import ProfileInstance
 from .logging import attach_safe_handler, configure_logging
@@ -59,7 +60,7 @@ def run(paths, *, port=0, browser=True, backup=False):
                         signal.signal(sig, lambda *_: server.request_stop())
                 server.start()
                 instance.publish(server.origin, token)
-                print('Construction Progress {}: {}'.format(VERSION, server.origin), flush=True)
+                print('{} {}: {}'.format(PRODUCT_NAME, VERSION, server.origin), flush=True)
                 print('Данные: ' + str(paths.database), flush=True)
                 print('Завершение: кнопка «Завершить работу» в приложении или Ctrl+C в этом окне. Дождитесь сообщения об остановке.', flush=True)
                 logger.info('server_ready')
@@ -82,7 +83,7 @@ def main(argv=None):
     for stream in (sys.stdout, sys.stderr):
         if stream is not None and hasattr(stream, 'reconfigure'):
             stream.reconfigure(encoding='utf-8', errors='backslashreplace')
-    parser = argparse.ArgumentParser(description='Construction Progress Windows Portable')
+    parser = argparse.ArgumentParser(description=PRODUCT_NAME + ' — Windows Portable')
     parser.add_argument('--data-dir', help='Отдельный каталог профиля (data, backups, exports, logs)')
     parser.add_argument('--no-browser', action='store_true')
     parser.add_argument('--no-pause', action='store_true', help='Не ждать Enter при ошибке EXE')

@@ -1,4 +1,5 @@
-Construction Progress W1.0
-Windows Portable x64 / schema 010
-Includes the current uncommitted 4.2 and partial 4.2.1 working-copy changes.
+ПЛАНКТОН. Учёт рабочего времени — W1.0 Build Kit
+Windows Portable x64 / schema 013
+Current sources include stages 4.3–4.5 and the presentation rebranding.
+The partial performance stage 4.2.1 retains its documented limitations.
 See BUILD_INFO.json for the actual build environment.

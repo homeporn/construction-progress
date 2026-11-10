@@ -1,1 +1,1 @@
-"""Construction Progress: offline construction progress accounting."""
+"""ПЛАНКТОН. Учёт рабочего времени — offline construction and workforce accounting."""

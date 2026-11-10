@@ -10,6 +10,7 @@ import shutil
 import struct
 from zipfile import ZipFile, ZIP_DEFLATED
 
+from app.branding import PRODUCT_SLUG
 from app.portable.resources import validate_resources
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -51,7 +52,7 @@ def check_windows_exe(path):
 
 def validate_portable(folder):
     folder = Path(folder)
-    check_windows_exe(folder/'ConstructionProgress.exe')
+    check_windows_exe(folder/(PRODUCT_SLUG+'.exe'))
     validate_resources(folder/'_internal', require_manifest=True)
     if not (folder/'_internal/python313.dll').is_file():
         raise ValueError('Missing bundled Python runtime')
@@ -72,28 +73,29 @@ def package_portable(folder, output):
     output.parent.mkdir(parents=True, exist_ok=True)
     with ZipFile(output, 'x', ZIP_DEFLATED) as archive:
         for path in sorted(folder.rglob('*')):
-            if path.is_file(): archive.write(path, 'ConstructionProgress/'+path.relative_to(folder).as_posix())
+            if path.is_file(): archive.write(path, PRODUCT_SLUG+'/'+path.relative_to(folder).as_posix())
         for directory in ('data','backups','logs','exports'):
-            archive.writestr('ConstructionProgress/'+directory+'/', b'')
+            archive.writestr(PRODUCT_SLUG+'/'+directory+'/', b'')
     return output
 
 
 def create_buildkit(root, output):
     root, output = Path(root), Path(output)
     selected = set()
-    for folder in ('app','migrations','requirements','scripts','tests','tools','packaging/windows','docs/windows'):
+    for folder in ('app','migrations','requirements','scripts','tests','tools','packaging/windows','docs/windows','docs/rebranding'):
         for path in (root/folder).rglob('*'):
             if path.is_file() and not path.is_symlink() and '__pycache__' not in path.parts and path.suffix in ('.py','.sql','.txt','.ps1','.spec','.cmd','.md','.json'):
                 selected.add(path)
     for name in ('windows_launcher.py','main.py','start.command','pyproject.toml','README.md',
                  'docs/windows_portable.md','docs/windows_build_results.md',
+                 'docs/rebranding_plankton.md',
                  'docs/stage421_results.md','docs/stage421_performance.md'):
         path=root/name
         if not path.is_file(): raise ValueError('Missing required build source '+name)
         selected.add(path)
     for source, _ in resource_entries(root): selected.add(source)
     output.parent.mkdir(parents=True, exist_ok=True)
-    prefix='ConstructionProgress-Windows-BuildKit/'
+    prefix=PRODUCT_SLUG+'-Windows-BuildKit/'
     hashes={p.relative_to(root).as_posix():hashlib.sha256(p.read_bytes()).hexdigest() for p in sorted(selected)}
     with ZipFile(output, 'x', ZIP_DEFLATED) as archive:
         for path in sorted(selected): archive.write(path,prefix+path.relative_to(root).as_posix())

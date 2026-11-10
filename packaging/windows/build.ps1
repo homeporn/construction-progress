@@ -24,7 +24,10 @@ if ($LASTEXITCODE -ne 0) { throw "Install CPython 3.13 x64 on the build machine 
 $Runtime = ($Runtime | Select-Object -Last 1).Trim()
 Invoke-Checked $Runtime @("-c", "import sys,struct,platform; assert sys.version_info[:2]==(3,13) and struct.calcsize('P')==8 and platform.machine().lower() in ('amd64','x86_64'), 'CPython 3.13 x64 required'")
 
-$Release = Join-Path $Root "dist\ConstructionProgress-Windows-x64.zip"
+$ProductSlug = & $Runtime -c "from app.branding import PRODUCT_SLUG; print(PRODUCT_SLUG)"
+if ($LASTEXITCODE -ne 0) { throw "Cannot read product build identifier." }
+$ProductSlug = ($ProductSlug | Select-Object -Last 1).Trim()
+$Release = Join-Path $Root ("dist\" + $ProductSlug + "-Windows-x64.zip")
 if (Test-Path -LiteralPath $Release) { throw "Release already exists. Move it aside; this script never overwrites artifacts." }
 $Work = Join-Path $Root ("build\windows-" + [guid]::NewGuid().ToString("N"))
 New-Item -ItemType Directory -Path $Work -Force | Out-Null
@@ -45,7 +48,7 @@ try {
 } finally {
     Remove-Item Env:\CP_WINDOWS_RESOURCE_MANIFEST -ErrorAction SilentlyContinue
 }
-$Portable = Join-Path $Work "dist\ConstructionProgress"
+$Portable = Join-Path $Work ("dist\" + $ProductSlug)
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot "PORTABLE_README.txt") -Destination (Join-Path $Portable "README.txt")
 Copy-Item -LiteralPath (Join-Path $PSScriptRoot "VERSION.txt") -Destination $Portable
 Invoke-Checked $BuildPython @("-m", "tools.windows.smoke", "--folder", $Portable, "--report", (Join-Path $Portable "BUILD_INFO.json"))

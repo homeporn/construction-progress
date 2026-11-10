@@ -12,5 +12,5 @@ if errorlevel 1 (
   pause
   exit /b 1
 )
-echo Build finished. See dist\ConstructionProgress-Windows-x64.zip
+echo Build finished. See dist\PlanktonTime-Windows-x64.zip
 pause

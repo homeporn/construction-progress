@@ -115,7 +115,9 @@ def create_app(config=None):
 
     @app.context_processor
     def shared_context():
+        from app.branding import PRODUCT_FAMILY_NAME, PRODUCT_NAME, PRODUCT_SUBTITLE
         return dict(csrf_token=csrf_token, today=instant()[:10],
+                    product_name=PRODUCT_NAME, product_family_name=PRODUCT_FAMILY_NAME, product_subtitle=PRODUCT_SUBTITLE,
                     current_project=current_project(),
                     workspaces=ProjectRepository(get_db()).list_projects(),
                     discipline_labels={"CONSTRUCTION": "СМР", "DESIGN": "Проектирование"},

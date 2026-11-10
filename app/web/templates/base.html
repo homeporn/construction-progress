@@ -3,7 +3,9 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>{% block title %}Construction Progress{% endblock %} · Construction Progress</title>
+  {% set section_title %}{% block title %}{% endblock %}{% endset %}
+  {% set section_name = section_title|striptags|trim %}
+  <title>{% if request.endpoint=='dashboard.index' or not section_name or section_name in [product_family_name,product_name] %}{{ product_name }}{% else %}{{ section_name }} | {{ product_family_name }}{% endif %}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/app.css') }}">
   <link rel="stylesheet" href="{{ url_for('static', filename='css/navigation.css') }}">
   <link rel="icon" href="{{ url_for('static', filename='favicon.svg') }}" type="image/svg+xml">
@@ -14,7 +16,7 @@
   <a class="skip-navigation" href="#main">Перейти к содержимому</a>
   <button class="navigation-backdrop" type="button" aria-label="Закрыть меню" tabindex="-1" data-navigation-close></button>
   <aside class="sidebar" id="application-sidebar" aria-label="Разделы приложения">
-    <a class="brand" href="{{ url_for('dashboard.index') }}"><span class="brand-mark">CP</span><span>Construction<br><strong>Progress</strong></span></a>
+    <a class="brand" href="{{ url_for('dashboard.index') }}" aria-label="{{ product_name }}" title="{{ product_name }}"><span class="brand-mark" aria-hidden="true">П</span><span class="brand-copy"><strong class="brand-title">{{ product_family_name }}</strong><span class="brand-subtitle">{{ product_subtitle|upper }}</span></span></a>
     <div class="workspace"><span class="eyebrow">РАБОЧЕЕ ПРОСТРАНСТВО</span>
       <form method="post" action="{{ url_for('projects.select') }}"><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="workspace_id" value="{{ current_project.id }}">
         <label>Объект<select name="project_id" aria-label="Текущий объект">{% for p in workspaces %}<option value="{{ p.id }}" {% if p.id==current_project.id %}selected{% endif %}>{{ p.name }}{{ ' · архив' if p.status=='archived' else '' }}</option>{% endfor %}</select></label><button type="submit" class="small secondary">Выбрать</button>
@@ -42,13 +44,13 @@
     <header class="topbar"><div class="navigation-toolbar"><button class="navigation-toggle" type="button" data-navigation-toggle aria-controls="application-sidebar" aria-expanded="{{ 'false' if navigation_collapsed else 'true' }}" aria-label="{{ 'Развернуть' if navigation_collapsed else 'Свернуть' }} боковую панель" title="Меню">☰</button><span class="topbar-project" title="{{ current_project.name }}">{{ current_project.name }}</span></div><span class="offline-badge">Офлайн</span></header>
     <main id="main">
       <nav class="breadcrumbs" aria-label="Хлебные крошки"><ol>{% for crumb in navigation_breadcrumbs %}<li>{% if crumb.url %}<a href="{{ crumb.url }}">{{ crumb.label }}</a>{% else %}<span {% if loop.last %}aria-current="page"{% endif %}>{{ crumb.label }}</span>{% endif %}</li>{% endfor %}</ol></nav>
-      <div class="page-heading"><div><div class="eyebrow">CONSTRUCTION PROGRESS</div><h1>{% block heading %}{% endblock %}</h1><p class="subtitle">{% block subtitle %}{% endblock %}</p></div>{% block heading_action %}{% endblock %}</div>
+      <div class="page-heading"><div><div class="eyebrow">{{ product_family_name }}</div><h1>{% block heading %}{% endblock %}</h1><p class="subtitle">{% block subtitle %}{% endblock %}</p></div>{% block heading_action %}{% endblock %}</div>
       {% for category, message in get_flashed_messages(with_categories=true) %}<div class="notice {{ category }}" role="status">{{ message }}</div>{% endfor %}
       {% if current_project.status=='archived' %}<div class="notice" role="status">Объект в архиве: учётные данные доступны для просмотра. Для продолжения работы восстановите объект в настройках.</div>{% endif %}
       {% block content %}{% endblock %}
       {% include "_pagination.html" %}
     </main>
-    <footer>Construction Progress <span>Локальная SQLite · Объекты и рабочие пространства</span></footer>
+    <footer>{{ product_name }} <span>Локальная SQLite · Объекты и рабочие пространства</span></footer>
   </div>
 <form id="navigation-state-form" method="post" action="{{ url_for('navigation.state') }}" hidden><input type="hidden" name="csrf_token" value="{{ csrf_token() }}"><input type="hidden" name="workspace_id" value="{{ current_project.id }}"></form>
 <span id="navigation-status" class="visually-hidden" role="status" aria-live="polite"></span>

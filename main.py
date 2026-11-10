@@ -6,6 +6,7 @@ import json
 import sqlite3
 
 from app.launch import LaunchArgumentParser, port_number, select_database
+from app.branding import PRODUCT_NAME
 from app.database import initialize
 from app.calculation_engine.historical import HistoricalCalculator
 from app.repositories.event_repository import EventRepository
@@ -42,7 +43,7 @@ def demo():
 
 
 def main():
-    parser = LaunchArgumentParser(description="Construction Progress — локальное приложение, подготовка к испытаниям macOS")
+    parser = LaunchArgumentParser(description=PRODUCT_NAME + " — локальное приложение, подготовка к испытаниям macOS")
     parser.add_argument("--db", help="Путь к рабочей SQLite-базе; по умолчанию data/construction_progress.sqlite3")
     parser.add_argument("--demo", action="store_true", help="Пример в памяти: 60%% факта, 45%% подтверждения")
     parser.add_argument("--plan-version", type=int, help="Номер записи версии для консольного отчёта")
@@ -94,7 +95,7 @@ def main():
                     args.report_date, args.knowledge_cutoff, args.plan_version)
                 print(json.dumps(asdict(result), default=json_value, ensure_ascii=False, indent=2))
                 return 2 if result.status.value == "INVALID" else 0
-            print("Construction Progress — локальная база")
+            print(PRODUCT_NAME + " — локальная база")
             print("База:", args.db)
             print("Объект:", project["name"])
             for row in WorkRepository(db, args.project_id).list_buildings():

@@ -1,4 +1,4 @@
-# Windows onedir build
+# ПЛАНКТОН. Учёт рабочего времени — Windows onedir build
 
 Run on Windows 10/11 x64 with CPython 3.13 x64 (recommended **3.13.12**):
 
@@ -11,7 +11,7 @@ Run on Windows 10/11 x64 with CPython 3.13 x64 (recommended **3.13.12**):
 The script creates an isolated build venv, installs pinned binary dependencies,
 runs the full test collection (macOS Bash tests are explicitly skipped), builds
 PyInstaller **onedir**, verifies resource hashes, runs the actual EXE in a private
-Unicode profile, and then creates `dist/ConstructionProgress-Windows-x64.zip`.
+Unicode profile, and then creates `dist/PlanktonTime-Windows-x64.zip`.
 Existing release archives are never overwritten; previous application folders
 and their databases are never build targets. The temporary native portable
 folder is printed at the end. No GitHub Actions or push is involved.
@@ -20,7 +20,7 @@ For an offline build, prepare wheels on a matching Windows/Python machine and us
 `-Wheelhouse 'D:\wheels'`. The destination application's ordinary use is offline;
 the initial online build needs access to PyPI unless a wheelhouse is provided.
 
-All Jinja templates, static resources, migrations 001–010, Excel templates and
+All Jinja templates, static resources, migrations 001–013, Excel templates and
 Flask/Waitress metadata are included explicitly. Runtime SQLite comes with Python.
 Excel uses the existing standard-library OOXML implementation; no new Excel
 library is introduced. `_internal` contains resources, never the working DB.
@@ -29,3 +29,10 @@ library is introduced. `_internal` contains resources, never the working DB.
 Linux environment**. The source Build Kit is not a finished portable release.
 See [instructions](../../docs/windows_portable.md) and
 [verification results](../../docs/windows_build_results.md).
+
+The compatible source entry remains `ConstructionProgress.spec`; EXE/COLLECT
+names come from `app.branding.PRODUCT_SLUG`. Future output is `PlanktonTime.exe`
+in the `PlanktonTime` folder. The existing profile, database filename, instance
+lock and configuration keys do not depend on this name. Do not rename or move
+an existing installation's profile just to change the wordmark. See
+[rebranding and update notes](../../docs/rebranding_plankton.md).

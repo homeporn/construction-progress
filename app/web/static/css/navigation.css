@@ -71,3 +71,16 @@
 }
 @media (prefers-reduced-motion: reduce) { .sidebar, .nav-chevron { transition: none; } }
 @media print { .skip-navigation, .navigation-backdrop, #navigation-state-form, #navigation-status { display: none !important; } }
+
+/* Product wordmark keeps the existing palette, fonts and navigation geometry. */
+.sidebar .brand { padding: 0 4px; gap: 10px; }
+.brand .brand-mark { flex: 0 0 34px; width: 34px; height: 36px; font-size: 24px; }
+.brand .brand-copy { min-width: 0; display: grid; gap: 5px; }
+.brand .brand-title { display: block; white-space: nowrap; font-size: 18px; font-weight: 750; letter-spacing: .035em; }
+.brand .brand-subtitle { display: block; white-space: nowrap; font-size: 8px; font-weight: 600; letter-spacing: .035em; line-height: 1.4; color: var(--muted); }
+@media (min-width: 901px) {
+  .nav-collapsed .brand { flex-direction: column; gap: 5px; padding: 0; width: 50px; }
+  .nav-collapsed .brand > span.brand-copy { display: block; width: 50px; text-align: center; }
+  .nav-collapsed .brand .brand-title { font-size: 8px; letter-spacing: 0; }
+  .nav-collapsed .brand .brand-subtitle { display: none; }
+}

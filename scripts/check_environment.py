@@ -166,8 +166,9 @@ def database_diagnostics(path):
 
 
 def diagnose(database=DEFAULT_DB_PATH, *, port=0, test_database=False, project_root=PROJECT_ROOT):
+    from app.branding import PRODUCT_NAME
     info = platform_info()
-    print("Construction Progress — диагностика без изменения данных", flush=True)
+    print(PRODUCT_NAME + " — диагностика без изменения данных", flush=True)
     print("Каталог проекта: " + str(Path(project_root).resolve()))
     print("Система: " + ("macOS" if sys.platform == "darwin" else info["system"]) + (" " + info["macos"] if info["macos"] else ""))
     print("Архитектура оборудования: " + info["hardware_arch"])

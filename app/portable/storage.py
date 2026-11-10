@@ -105,7 +105,9 @@ def prepare_database(paths):
 
 def diagnostic_report(paths):
     """Read-only: no migrations, no seeding, no employee records, no secrets."""
+    from app.branding import PRODUCT_NAME, PRODUCT_ID
     report = dict(application_version=VERSION, python=platform.python_version(),
+                  product_name=PRODUCT_NAME, product_id=PRODUCT_ID,
                   sqlite=sqlite3.sqlite_version, platform=platform.platform(),
                   architecture=platform.machine(), database=str(paths.database),
                   resources=str(paths.resources), database_exists=paths.database.is_file(),

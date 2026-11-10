@@ -17,6 +17,7 @@ import time
 from urllib.parse import urlencode
 from urllib.request import HTTPCookieProcessor, ProxyHandler, Request, build_opener
 
+from app.branding import PRODUCT_NAME, PRODUCT_ID, PRODUCT_SLUG
 from app.portable.instance import authenticated_probe
 from app.portable.storage import read_only
 from tools.windows.bundle import check_windows_exe
@@ -129,7 +130,7 @@ def main():
     args=parser.parse_args()
     if os.name!='nt' or platform.machine().lower() not in ('amd64','x86_64'):
         parser.error('This smoke test requires real Windows x64. Linux is not Windows acceptance.')
-    exe=args.folder.resolve()/'ConstructionProgress.exe'
+    exe=args.folder.resolve()/(PRODUCT_SLUG+'.exe')
     check_windows_exe(exe)
     with tempfile.TemporaryDirectory(prefix='cp-w1-windows-') as temporary:
         profile=Path(temporary)/'Test User Тест Документы Construction Progress'/('Длинный профиль '+ 'a'*64)
@@ -151,6 +152,7 @@ def main():
         with closing(read_only(database)) as db:
             assert db.execute('PRAGMA integrity_check').fetchone()[0]=='ok'
         report=dict(status='native_exe_smoke_passed_manual_browser_acceptance_pending',
+            product_name=PRODUCT_NAME,product_id=PRODUCT_ID,product_slug=PRODUCT_SLUG,
             built_at=datetime.now(timezone.utc).isoformat(),windows=platform.platform(),architecture=platform.machine(),
             build_python=platform.python_version(),pyinstaller=version('pyinstaller'),waitress=version('waitress'),
             native_runtime_python=diag['python'],native_sqlite=diag['sqlite'],exe_bytes=exe.stat().st_size,

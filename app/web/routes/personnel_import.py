@@ -27,7 +27,8 @@ def start():
 
 @bp.get('/personnel/import/template.xlsx')
 def template():
-    return send_file(BytesIO(make_template()),mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',as_attachment=True,download_name=TEMPLATE_NAME)
+    from app.branding import PRODUCT_SLUG
+    return send_file(BytesIO(make_template()),mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',as_attachment=True,download_name=PRODUCT_SLUG+'_Шаблон_импорта_работников.xlsx')
 
 
 @bp.route('/personnel/import/<session_id>',methods=['GET','POST'])

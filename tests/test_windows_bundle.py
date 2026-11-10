@@ -51,7 +51,7 @@ def test_buildkit_captures_working_copy_and_excludes_all_user_data(tmp_path):
     result = create_buildkit(PROJECT_ROOT, tmp_path / 'BuildKit.zip')
     with zipfile.ZipFile(result) as archive:
         names = archive.namelist()
-        prefix = 'ConstructionProgress-Windows-BuildKit/'
+        prefix = 'PlanktonTime-Windows-BuildKit/'
         assert prefix+'windows_launcher.py' in names
         assert prefix+'migrations/010_timesheets.sql' in names
         assert prefix+'packaging/windows/build.ps1' in names

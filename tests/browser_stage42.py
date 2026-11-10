@@ -21,6 +21,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from app.database import connect, initialize
+from app.branding import PRODUCT_NAME
 from app.calculation_engine.historical import HistoricalCalculator
 from app.repositories.brigade_repository import BrigadeRepository
 from app.repositories.event_repository import EventRepository
@@ -72,7 +73,7 @@ def launch(path, folder):
     while time.monotonic() < deadline:
         log.flush()
         content = (folder / 'server.log').read_text(encoding='utf-8')
-        match = re.search(r'Construction Progress: (http://127\.0\.0\.1:\d+)', content)
+        match = re.search(re.escape(PRODUCT_NAME) + r': (http://127\.0\.0\.1:\d+)', content)
         if match:
             return process, log, match.group(1)
         if process.poll() is not None:

@@ -1,0 +1,21 @@
+F                                                                        [100%]
+=================================== FAILURES ===================================
+__________ test_portable_diagnostics_show_brand_without_creating_data __________
+
+tmp_path = PosixPath('/tmp/pytest-of-agent/pytest-187/test_portable_diagnostics_show0')
+
+    def test_portable_diagnostics_show_brand_without_creating_data(tmp_path):
+        target=tmp_path/'Профиль ПЛАНКТОН'
+        diagnostic=subprocess.run([sys.executable,str(PROJECT_ROOT/'windows_launcher.py'),'--data-dir',str(target),'--diagnose'],cwd=tmp_path,text=True,capture_output=True,timeout=20)
+        assert diagnostic.returncode==0,diagnostic.stderr
+        data=json.loads(diagnostic.stdout)
+>       assert data['product_name']==NAME and data['product_id']=='plankton_time'
+E       AssertionError: assert ('РџР›РђРќРљРў...ІСЂРµРјРµРЅРё' == 'ПЛАНКТОН. Уч...очего времени'
+E         
+E         - ПЛАНКТОН. Учёт рабочего времени
+E         + РџР›РђРќРљРўРћРќ. РЈС‡С‘С‚ СЂР°Р±РѕС‡РµРіРѕ РІСЂРµРјРµРЅРё)
+
+tests/test_rebranding.py:150: AssertionError
+=========================== short test summary info ============================
+FAILED tests/test_rebranding.py::test_portable_diagnostics_show_brand_without_creating_data
+1 failed in 0.29s
